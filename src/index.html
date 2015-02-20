@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Endurance Almaty</title>
+  <meta name="description" content="A modern companion for your Endurance Training">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=3">
+
+  <link rel="stylesheet" href="./styles/app.min.css">
+
+</head>
+<body>
+
+  <figure>
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <symbol id="arrow-down" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet">
+        <path class="svg-currentColor" d="M7.41 7.84l4.59 4.58 4.59-4.58 1.41 1.41-6 6-6-6z"/>
+      </symbol>
+      <symbol id="arrow-left" viewBox="0 0 48 48" preserveAspectRatio="xMidYMid meet">
+        <path class="svg-currentColor" d="M30.83 32.67l-9.17-9.17 9.17-9.17-2.83-2.83-12 12 12 12z"/>
+      </symbol>
+      <symbol id="arrow-right" viewBox="0 0 48 48" preserveAspectRatio="xMidYMid meet">
+        <path class="svg-currentColor" d="M17.17 32.92l9.17-9.17-9.17-9.17 2.83-2.83 12 12-12 12z"/>
+      </symbol>
+      <symbol id="completion" viewbox="0 0 48 48" preserveAspectRatio="xMidYMid meet">
+        <circle fill="#fff" cx="24" cy="24" r="24"/>
+        <circle fill="#4CC448" cx="24" cy="24" r="21"/>
+        <path d="M20 34.42l-10-10 2.82-2.82L20 28.76l15.18-15.18L38 16.42l-18 18z" fill="#fff"/>
+      </symbol>
+      <symbol id="upload" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet">
+        <path class="svg-currentColor" d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2h-14z"/>
+      </symbol>
+    </svg>
+  </figure>
+
+  <div id="main"></div>
+
+  <script>
+    var WebFontConfig = ({
+      google: { families: [ 'PT+Sans:400,700:latin,cyrillic', 'Open+Sans:700,400:latin,cyrillic' ] }
+    });
+    (function() {
+      'use strict';
+      var wf = document.createElement('script');
+      wf.src = ('https:' === document.location.protocol ? 'https' : 'http') +
+                '://ajax.googleapis.com/ajax/libs/webfont/1.5.6/webfont.js';
+      wf.type = 'text/javascript';
+      wf.async = 'true';
+      var s = document.getElementsByTagName('script')[0];
+      s.parentNode.insertBefore(wf, s);
+    })();
+  </script>
+  <script src="./scripts/app.js"></script>
+
+</body>
+</html>

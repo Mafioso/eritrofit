@@ -1,0 +1,67 @@
+.nav
+  width: 100%
+  position: relative
+  z-index: 9999
+
+.nav-list,
+.nav-list-extra
+  list-style: none
+
+.nav-list
+  text-align: right
+
+  &-item
+    margin: 0
+    display: inline-block
+    vertical-align: top
+
+.nav-link
+  display: block
+  padding: 0 1rem
+  line-height: 3rem
+  font-family: $stack-heading
+  color: $color-secondary
+  &--active,
+  &:hover
+    color: $color-primary
+
+  .wf-loading &
+    font-family: $stack-default
+
+  &--logo
+    float: left
+
+  &--user
+    padding-top: .5rem
+
+  &--extraspace
+    padding-right: 2rem
+
+.nav-list-extra
+  display: none
+  position: absolute
+  top: 3rem
+  right: 0
+  text-align: left
+
+.nav-list-extra-item
+  margin: 0
+  line-height: 3rem
+  background-color: $color-primary
+  &:last-of-type
+    border-bottom-left-radius: $radius-default
+  .nav-link
+    padding-right: 5rem
+    color: $color-white
+    &:hover
+      color: $color-secondary
+
+.nav-list-item--extended
+  height: 3rem
+  border-left: 2px solid $color-neutral
+  &:hover
+    background-color: $color-primary
+    .nav-list-extra
+      display: block
+    .nav-link--user
+      color: $color-white

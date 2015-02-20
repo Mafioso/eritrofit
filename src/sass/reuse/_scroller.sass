@@ -1,0 +1,31 @@
+.scroller
+  padding: 2rem 0
+  &-nav
+    display: inline-block
+    vertical-align: top
+    width: 4rem
+    .icon
+      height: 3rem
+      width: 4rem
+
+  &-week
+    display: inline-block
+    vertical-align: top
+    width: calc(100% - 8rem)
+    &-day
+      position: relative
+      width: 20%
+      text-align: center
+      color: $color-secondary
+      &.is-active,
+      &:hover
+        color: $color-primary
+      &-title
+        line-height: 2rem
+        display: block
+        font-family: $stack-heading
+        font-size: $size-heading
+        font-weight: 700
+
+        .wf-loading &
+          font-family: $stack-default
