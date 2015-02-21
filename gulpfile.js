@@ -131,11 +131,11 @@ gulp.task('clean', function(cb) {
 
 
 // Default task
-gulp.task('default', ['clean', 'html', 'styles', 'scripts', 'jest']);
+gulp.task('default', ['clean', 'html', 'styles', 'images', 'scripts', 'jest']);
 
 
 // Watch
-gulp.task('watch', ['html', 'styles', 'scripts', 'serve'], function() {
+gulp.task('watch', ['html', 'styles', 'images', 'scripts', 'serve'], function() {
   gulp.watch('src/*.html', ['html']);
   gulp.watch('src/styles/**/*.sass', ['styles']);
   gulp.watch('src/images/**/*', ['images']);

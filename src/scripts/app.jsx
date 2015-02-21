@@ -2,74 +2,60 @@
 
 window.React = require('react');
 
-var director = require('director');
-// var router = new director.Router();
+var page = require('page');
 var routerActions = require('./actions/routerActions');
 var routerStore = require('./stores/routerStore');
-var routes = require('./constants/routes');
 var views = require('./constants/views');
+var routes = require('./constants/routes');
 
-var Home = require('./views/home.jsx');
 var Login = require('./views/login.jsx');
-
-var appContainer = document.getElementById('main');
-
-// var router = new director.Router();
 
 var RouteHandler = React.createClass({
   getInitialState: function() {
-
     return ({
-      next: routerStore.defaultRoute,
-      routerActionsDisabled: false
+      currentView: '',
+      viewProps: {}
     });
   },
   componentWillMount: function() {
-    var routerConfiguration = {};
-    var self = this;
-    function returnRouterActions(route) {
-      return function(args) {
-        // check if routerActionsDisabled is true
-        // don't emit new routerAction
-        // set routerActionsDisable to false again
-        if (!this.state.routerActionsDisabled) {
-          routerActions({ next: views[route], args: args});
-        }
-        this.setState({routerActionsDisabled: false});
-      };
-    }
-    for (var route in routes) {
-      routerConfiguration[routes[route]] = returnRouterActions(route);
-    }
-    var router = new director.Router(routerConfiguration);
-    router.init('/');
+
+    page(routes.INDEX, function() {
+      // console.log(routes.INDEX, 'matched!');
+      routerActions({ currentView: views.INDEX });
+    });
+    page(routes.LOGIN, function() {
+      // console.log(routes.LOGIN, 'matched!');
+      routerActions({ currentView: views.LOGIN });
+    });
+    page(routes.DAY, function(ctx) {
+      // console.log(routes.DAY, 'matched!');
+      routerActions({ currentView: views.DAY, viewProps: ctx.params });
+    });
   },
   componentDidMount: function() {
     var self = this;
     routerStore.listen(function(data) {
-      // set routerActionsDisabled to true if
-      // current url is different from data.next
-      // update current url to the desired one
-      self.setState({ next: data.next, data: data});
+      // console.log(data, '<<<<< received data');
+      self.setState({ currentView: data.currentView, viewProps: data.viewProps });
+      if (data.redirectView !== data.currentView) {
+        // console.log('should redirect!');
+        page.redirect(data.redirectUrl);
+      } else {
+        // console.log('no need for redirect!');
+      }
+    });
+    page({
+      hashbang: true
     });
   },
   render: function() {
     var view;
-
-    switch (this.state.next) {
-      case routes.INDEX:
-        view = <Home />;
-        break;
-      case routes.LOGIN:
+    switch (this.state.currentView) {
+      case views.LOGIN:
         view = <Login />;
         break;
-      case routes.DAY:
-        console.log(this.state);
-        view = <Home />;
-        break;
       default:
-        // 404 page here
-        console.log('404');
+        view = 'Default';
         break;
     }
     return (
@@ -80,4 +66,4 @@ var RouteHandler = React.createClass({
   }
 });
 
-React.render(<RouteHandler />, appContainer);
+React.render(<RouteHandler />, document.getElementById('main'));
