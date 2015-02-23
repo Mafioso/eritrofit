@@ -1,63 +1,99 @@
 'use strict';
 
 window.React = require('react');
+var RouterActions = require('./actions/RouterActions');
+var RouterStore = require('./stores/RouterStore');
+var _ = require('lodash');
+// var page = require('page');
 
-var page = require('page');
-var routerActions = require('./actions/routerActions');
-var routerStore = require('./stores/routerStore');
 var views = require('./constants/views');
-var routes = require('./constants/routes');
+// var routes = require('./constants/routes');
 
 var Login = require('./views/login.jsx');
 
-var RouteHandler = React.createClass({
+var App = React.createClass({
   getInitialState: function() {
     return ({
-      currentView: '',
-      viewProps: {}
+      current_url: window.location.hash.substring(1),
+      view: 'DEFAULT',
+      params: {}
     });
   },
   componentWillMount: function() {
-
-    page(routes.INDEX, function() {
-      // console.log(routes.INDEX, 'matched!');
-      routerActions({ currentView: views.INDEX });
-    });
-    page(routes.LOGIN, function() {
-      // console.log(routes.LOGIN, 'matched!');
-      routerActions({ currentView: views.LOGIN });
-    });
-    page(routes.DAY, function(ctx) {
-      // console.log(routes.DAY, 'matched!');
-      routerActions({ currentView: views.DAY, viewProps: ctx.params });
-    });
+    var self = this;
+    window.onpopstate = function() {
+      RouterActions.popstate({
+        target_url: window.location.hash.substring(1),
+        current_url: self.state.current_url,
+        current_view: self.state.view
+      });
+    };
   },
   componentDidMount: function() {
     var self = this;
-    routerStore.listen(function(data) {
-      // console.log(data, '<<<<< received data');
-      self.setState({ currentView: data.currentView, viewProps: data.viewProps });
-      if (data.redirectView !== data.currentView) {
-        // console.log('should redirect!');
-        page.redirect(data.redirectUrl);
-      } else {
-        // console.log('no need for redirect!');
+    RouterStore.streams.setView.listen(function(payload) {
+      if (!payload) { return; }
+      // 1. set next_url if exists, empty it if next_url is the same as current_url
+      // 2. set current_view and transfer props to it,
+      //    don't forget to handle redirectPrompt handler
+      // 3. update current_url with next_url
+      // 4. ...
+      self.setState({
+        view: payload.target_view,
+        params: payload.params,
+        current_url: payload.target_url
+      });
+
+      if (payload.update_url) {
+        window.history.replaceState({}, '', '#'+self.state.current_url);
       }
     });
-    page({
-      hashbang: true
+    // initial popstate
+    RouterActions.popstate({
+      target_url: window.location.hash.substring(1),
+      current_url: self.state.current_url,
+      current_view: self.state.view
     });
   },
   render: function() {
     var view;
-    switch (this.state.currentView) {
+    // in case of redirectPrompt
+    var params = _.assign(this.state.params, { current_url: this.state.current_url });
+
+    switch(this.state.view) {
+      case views.INDEX:
+        view = 'index';
+        break;
       case views.LOGIN:
-        view = <Login />;
+        view = <Login params={params} />;
+        break;
+        case views.PASSWORD_RESET:
+          view = 'reset password';
+          break;
+      case views.DAY:
+        view = 'day';
+        break;
+      case views.PROFILE:
+        view = 'profile';
+        break;
+      case views.RESULTS:
+        view = 'results';
+        break;
+      case views.DAYS:
+        view = 'days';
+        break;
+      case views.NEW_DAY:
+        view = 'new_day';
+        break;
+      case views.USERS:
+        view = 'users';
         break;
       default:
-        view = 'Default';
+        view = '404!!!!';
+        // NOT_FOUND
         break;
     }
+
     return (
       <div>
         {view}
@@ -66,4 +102,4 @@ var RouteHandler = React.createClass({
   }
 });
 
-React.render(<RouteHandler />, document.getElementById('main'));
+React.render(<App />, document.getElementById('main'));

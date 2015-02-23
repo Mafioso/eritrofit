@@ -1,20 +1,30 @@
 'use strict';
 
-// var Bacon = require('baconjs');
 var flux = require('fluxstream');
 var AuthActions = require('../actions/AuthActions');
+var RouterActions = require('../actions/RouterActions');
 var api = require('../utils/api');
-
+var routes = require('../constants/routes');
+var typeCheck = require('type-check').typeCheck;
 
 
 module.exports = flux.createStore({
   init: function() {
     AuthActions.submitSignIn.listen(function(payload) {
-      var fetchToken = api.auth(payload.user, payload.pass);
-      fetchToken.onError(AuthActions.signInError);
-      fetchToken.onValue(function(data) {
-        console.log(data, 'fetchToken');
+      var router_data = payload.router_data;
+      var fetchToken = api.tryAuth(payload.email, payload.password);
+
+      fetchToken.onValue(function(payload) {
+        if (typeCheck('Error',payload)) {
+          AuthActions.signInError(payload);
+        } else {
+          if (!router_data.target_url) { router_data.target_url = routes.INDEX; }
+          AuthActions.signInSuccess(router_data);
+        }
       });
+    });
+    AuthActions.signInSuccess.listen(function(payload) {
+      RouterActions.redirectPrompt(payload);
     });
   },
   config: {
@@ -23,42 +33,3 @@ module.exports = flux.createStore({
     }
   }
 });
-
-
-// var userStore = flux.createStore({
-//   config: {
-//     auth: {
-//       action: userActions,
-//       map: function(payload) {
-//         console.log(payload, '>>>>> user store payload');
-//         var state = {};
-//         if (payload) {
-//           if (payload.email && payload.password) {
-//             _ref.authWithPassword({
-//               email: payload.email,
-//               password: payload.password
-//             }, function(error, authData) {
-//               if (error) {
-//                 console.log(error, 'error :(');
-//                 state.error = error;
-//               } else {
-//                 console.log(authData, 'success!');
-//                 state = authData;
-//               }
-//               return state;
-//             });
-//           } else {
-//             state.error = 'EMPTY';
-//             return state;
-//           }
-//         }
-//       },
-//       inputAction: userActions,
-//       inputHandler: function(payload) {
-//         console.log(payload, 'input handler')
-//       }
-//     }
-//   }
-// });
-
-// module.exports = userStore;

@@ -2,34 +2,77 @@
 
 var AuthActions = require('../actions/AuthActions');
 var AuthStore = require('../stores/AuthStore');
+var views = require('../constants/views');
 
 var Login = React.createClass({
   getInitialState: function() {
     return({
-      error: ''
+      error: { code: '' },
+      waiting: false
     });
-  },
-  componentWillMount: function() {
-
   },
   componentDidMount: function() {
     var self = this;
-    // userStore.listen(function(data) {
-    //   console.log(data, '<<<<<< received data');
-    // });
     AuthStore.streams.errors.listen(function(payload) {
-      self.setState({ error: payload });
+      if (payload) {
+        self.setState({ error: payload, waiting: false });
+      }
     });
+  },
+  componentDidUpdate: function() {
+    // keep focus in email field
+    if (this.state.error) {
+      switch(this.state.error.code) {
+        case 'EMPTY_EMAIL':
+          this.refs.loginEmail.getDOMNode().focus();
+          break;
+        case 'EMPTY_PASSWORD':
+          this.refs.loginPassword.getDOMNode().focus();
+          break;
+        case 'INVALID_USER':
+          this.refs.loginEmail.getDOMNode().select();
+          break;
+        case 'INVALID_PASSWORD':
+          this.refs.loginPassword.getDOMNode().select();
+          break;
+        default:
+          break;
+      }
+    } else {
+      this.refs.loginEmail.getDOMNode().focus();
+    }
   },
   handleSubmit: function(event) {
     event.preventDefault();
+
+    this.setState({ waiting: true });
+
     AuthActions.submitSignIn({
       email: this.refs.loginEmail.getDOMNode().value,
-      password: this.refs.loginPassword.getDOMNode().value
+      password: this.refs.loginPassword.getDOMNode().value,
+      router_data: {
+        target_url: this.props.params.next_url,
+        current_url: this.props.params.current_url,
+        current_view: views.LOGIN
+      }
     });
   },
   render: function() {
     var error;
+    console.log(this.state);
+    switch(this.state.error.code) {
+      case 'EMPTY_PASSWORD':
+      case 'INVALID_PASSWORD':
+        error = (<div className='login-line login-line--error'>Неправильный пароль</div>);
+        break;
+      case 'EMPTY_EMAIL':
+      case 'INVALID_USER':
+        error = (<div className='login-line login-line--error'>Такого пользователя не существует</div>);
+        break;
+      default:
+        break;
+    }
+
     return (
       <form className='login' onSubmit={this.handleSubmit}>
         <div className='login-container'>
@@ -52,8 +95,16 @@ var Login = React.createClass({
               Забыли пароль?
             </a>
           </div>
+
           {error}
-          <button className='login-submit' type='submit'>Войти</button>
+
+          <button
+            disabled={this.state.waiting}
+            className='login-submit'
+            type='submit'>
+              Войти
+          </button>
+
           <div className='login-line login-line--aligncenter'>
             Регистрация закрыта, ищите нас в Facebook.
           </div>

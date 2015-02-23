@@ -1,36 +1,25 @@
 'use strict';
 
-var gulp       = require('gulp');
-var del        = require('del');
-var path       = require('path');
-var browserify = require('browserify');
-var reactify   = require('reactify');
-var watchify   = require('watchify');
-var source     = require('vinyl-source-stream');
-var $          = require('gulp-load-plugins')();
+var gulp = require('gulp');
+var $ = require('gulp-load-plugins')();
+var http = require('http');
+var ecstatic = require('ecstatic');
+var runSequence = require('run-sequence');
+var del = require('del');
 
-var prod = $.util.env.prod;
-
-// gulp-plumber for error handling
-function onError() {
-  /* jshint ignore:start */
-  var args = Array.prototype.slice.call(arguments);
-  $.util.beep();
-  $.notify.onError({
-    title: "Compile Error",
-    message: "<%= error.message %>"
-    }).apply(this, args);
-    this.emit('end'); // Keep gulp from hanging on this task
-    /* jshint ignore:end */
-  }
-
+gulp.task('clean', function(){
+  del([
+    '.tmp',
+    'dist/*',
+    '!dist/.git'
+  ], function(err, deletedFiles) {
+    console.log('Files deleted: ', deletedFiles.join(', '));
+  });
+});
 
 // Styles
 gulp.task('styles', function() {
   return gulp.src('src/sass/**/*')
-    .pipe($.plumber({
-      errorHandler: onError
-    }))
     .pipe($.rubySass({
       'sourcemap=none': true,
       style: 'expanded',
@@ -43,42 +32,16 @@ gulp.task('styles', function() {
     .pipe($.size());
 });
 
-
-// Scripts
-gulp.task('scripts', function() {
-  var bundler;
-  bundler = browserify({
-    basedir: __dirname,
-    noparse: ['react/addons', 'reflux', 'fastclick', 'react-router'],
-    entries: ['./src/scripts/app.jsx'],
-    transform: [reactify],
-    extensions: ['.jsx'],
-    debug: true,
-    cache: {},
-    packageCache: {},
-    fullPaths: true
-  });
-
-  bundler = watchify(bundler);
-
-  function rebundle() {
-    console.log('Bundling Scripts...');
-    var start = Date.now();
-    return bundler.bundle()
-    .on('error', onError)
-    .pipe(source('app.js'))
-    .pipe(prod ? $.streamify($.uglify()) : $.util.noop())
-    .pipe(gulp.dest('dist/scripts'))
-    .pipe($.notify(function() {
-      console.log('Bundling Complete - ' + (Date.now() - start) + 'ms');
-      }));
-  }
-
-  bundler.on('update', rebundle);
-
-  return rebundle();
-  });
-
+gulp.task('browserify', function() {
+  return gulp.src('src/scripts/app.jsx')
+    .pipe($.browserify({
+      noparse: ['react/addons', 'fluxstream', 'baconjs'],
+      transform: 'reactify',
+      extensions: ['.jsx']
+    }))
+    .pipe($.concat('app.js'))
+    .pipe(gulp.dest('dist/scripts'));
+});
 
 // HTML
 gulp.task('html', function() {
@@ -87,7 +50,6 @@ gulp.task('html', function() {
   .pipe(gulp.dest('dist'))
   .pipe($.size());
   });
-
 
 // Images
 gulp.task('images', function() {
@@ -101,42 +63,56 @@ gulp.task('images', function() {
   .pipe($.size());
   });
 
-
-// Webserver
 gulp.task('serve', function() {
-  gulp.src('dist')
-  .pipe($.webserver({
-    livereload: true,
-    port: 9000,
-    fallback: 'index.html'
-    }));
-  });
+  http.createServer(ecstatic({root: 'dist'})).listen(8080);
+});
 
+gulp.task('default', ['clean'], function(callback) {
+  runSequence('styles', ['browserify', 'html', 'images', 'serve'], callback);
+});
 
-// Testing
-gulp.task('jest', function() {
-  var nodeModules = path.resolve('./node_modules');
-  return gulp.src('src/scripts/**/__tests__')
-  .pipe($.jest({
-    scriptPreprocessor: nodeModules + '/gulp-jest/preprocessor.js',
-    unmockedModulePathPatterns: [nodeModules + '/react']
-    }));
-  });
+gulp.task('watch', ['default'], function() {
+  gulp.watch('src/**/*.html', ['html']);
+  gulp.watch(['src/**/*.js', 'src/**/*.jsx'], ['browserify']);
+});
 
-
-// Clean
-gulp.task('clean', function(cb) {
-  del(['dist/styles', 'dist/scripts', 'dist/images'], cb);
-  });
-
-
-// Default task
-gulp.task('default', ['clean', 'html', 'styles', 'images', 'scripts', 'jest']);
-
-
-// Watch
-gulp.task('watch', ['html', 'styles', 'images', 'scripts', 'serve'], function() {
-  gulp.watch('src/*.html', ['html']);
-  gulp.watch('src/styles/**/*.sass', ['styles']);
-  gulp.watch('src/images/**/*', ['images']);
-  });
+//
+//
+// // Webserver
+// gulp.task('serve', function() {
+//   gulp.src('dist')
+//   .pipe($.webserver({
+//     livereload: false,
+//     port: 9000,
+//     fallback: 'index.html'
+//     }));
+//   });
+//
+//
+// // Testing
+// gulp.task('jest', function() {
+//   var nodeModules = path.resolve('./node_modules');
+//   return gulp.src('src/scripts/**/__tests__')
+//   .pipe($.jest({
+//     scriptPreprocessor: nodeModules + '/gulp-jest/preprocessor.js',
+//     unmockedModulePathPatterns: [nodeModules + '/react']
+//     }));
+//   });
+//
+//
+// // Clean
+// gulp.task('clean', function(cb) {
+//   del(['dist/styles', 'dist/scripts', 'dist/images'], cb);
+//   });
+//
+//
+// // Default task
+// gulp.task('default', ['clean', 'html', 'styles', 'images', 'scripts', 'jest']);
+//
+//
+// // Watch
+// gulp.task('watch', ['html', 'styles', 'images', 'scripts', 'serve'], function() {
+//   gulp.watch('src/*.html', ['html']);
+//   gulp.watch('src/styles/**/*.sass', ['styles']);
+//   gulp.watch('src/images/**/*', ['images']);
+//   });
