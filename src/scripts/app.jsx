@@ -6,12 +6,12 @@ var RouterStore = require('./stores/RouterStore');
 var _ = require('lodash');
 var moment = require('moment');
 require('moment/locale/ru');
-moment.lang('ru');
-moment.locale('en', {
-  calendar: {
-    sameDay: '[today]'
-  }
-});
+// moment.locale('ru');
+// moment.locale('en', {
+//   calendar: {
+//     sameDay: '[today]'
+//   }
+// });
 moment.locale('ru', {
   calendar: {
     sameDay: '[сегодня]'

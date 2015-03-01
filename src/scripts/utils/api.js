@@ -4,6 +4,8 @@ var Bacon = require('baconjs');
 var Firebase = require('firebase');
 var ref = new Firebase('https://endurance-almaty.firebaseio.com');
 var _ = require('lodash');
+var JsSHA = require('jssha');
+var Identicon = require('./identicon');
 
 module.exports = {
   tryAuth: function(email, password) {
@@ -28,5 +30,20 @@ module.exports = {
   },
   logout: function() {
     ref.unauth();
+  },
+  getEmail: function() {
+    return ref.getAuth().password.email;
+  },
+  getBase64Userpic: function(text) {
+    var textSHA = new JsSHA(text, 'TEXT');
+    var hash = textSHA.getHash('SHA-1', 'HEX');
+    var data = new Identicon(hash, 32, 4/32).toString();
+    return 'data:image/png;base64,' + data;
+  },
+  getLargeBase64Userpic: function(text) {
+    var textSHA = new JsSHA(text, 'TEXT');
+    var hash = textSHA.getHash('SHA-1', 'HEX');
+    var data = new Identicon(hash, 48, 4/48).toString();
+    return 'data:image/png;base64,' + data;
   }
 };

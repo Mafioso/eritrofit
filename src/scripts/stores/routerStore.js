@@ -31,8 +31,6 @@ module.exports = flux.createStore({
       // 2. current_url - transition from this url
       // 3. current_view - transition from this view
 
-      console.log(payload);
-
       if (newState.target_url === routes.LOGOUT) {
         // do absolutely nothing and wait for redirect
         AuthActions.logout();
@@ -84,14 +82,13 @@ module.exports = flux.createStore({
         // ...
 
       } else {
-        console.log('not authorized!');
+
         // prompt login for pages, that are not LOGIN or PASSWORD_RESET
         if (_.indexOf([views.LOGIN, views.PASSWORD_RESET], newState.target_view) === -1) {
           newState.update_url = true;
           newState.target_view = views.LOGIN;
           newState.params.next_url = newState.target_url;
           newState.target_url = routes.LOGIN;
-          console.log(newState, 'not authorized');
         }
       }
 
