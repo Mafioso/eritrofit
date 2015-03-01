@@ -3,6 +3,7 @@
 module.exports = {
   INDEX: '/',
   LOGIN: '/login',
+  LOGOUT: '/logout',
   PASSWORD_RESET: '/login/reset-password',
   DAY: '/day/:day',
   PROFILE: '/profile/:userId',

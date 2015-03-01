@@ -2,10 +2,11 @@
 
 var Icon = React.createClass({
   render: function() {
-    var icon = '<use xlink:href="#'+ this.props.name + '"></use>';
-    return (<figure className="icon icon--{ this.props.name }">
+    var iconClass = 'icon icon--'+this.props.name;
+    var icon = "<use xlink:href='#"+ this.props.name + "'></use>";
+    return (<span className={iconClass}>
       <svg dangerouslySetInnerHTML={{ __html: icon }} />
-    </figure>);
+    </span>);
   }
 });
 

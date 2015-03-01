@@ -5,5 +5,6 @@ module.exports = flux.createActions([
   'submitSignIn',
   'signInError',
   'signOut',
-  'signInSuccess'
+  'signInSuccess',
+  'logout'
 ]);

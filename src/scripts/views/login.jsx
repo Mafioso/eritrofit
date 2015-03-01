@@ -1,8 +1,10 @@
 'use strict';
 
+var Icon = require('../components/icon.jsx');
 var AuthActions = require('../actions/AuthActions');
 var AuthStore = require('../stores/AuthStore');
 var views = require('../constants/views');
+var routes = require('../constants/routes');
 
 var Login = React.createClass({
   getInitialState: function() {
@@ -44,6 +46,7 @@ var Login = React.createClass({
   },
   handleSubmit: function(event) {
     event.preventDefault();
+    console.log(this.props.params.next_url ? this.props.params.next_url : routes.INDEX, 'target_url');
 
     this.setState({ waiting: true });
 
@@ -51,7 +54,7 @@ var Login = React.createClass({
       email: this.refs.loginEmail.getDOMNode().value,
       password: this.refs.loginPassword.getDOMNode().value,
       router_data: {
-        target_url: this.props.params.next_url,
+        target_url: this.props.params.next_url || routes.INDEX,
         current_url: this.props.params.current_url,
         current_view: views.LOGIN
       }
@@ -76,7 +79,9 @@ var Login = React.createClass({
     return (
       <form className='login' onSubmit={this.handleSubmit}>
         <div className='login-container'>
-          <h1 className='login-heading'>Endurance Almaty</h1>
+          <div className='login-heading'>
+            <Icon name='logo' />
+          </div>
           <input
             autoFocus
             className='login-input login-input--email'
@@ -90,7 +95,7 @@ var Login = React.createClass({
             placeholder='Пароль' />
           <div className='login-line login-line--alignright'>
             <a
-              href='#'
+              href='/#/login/reset-password'
               className='login-link'>
               Забыли пароль?
             </a>

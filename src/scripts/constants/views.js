@@ -3,8 +3,9 @@
 var keyMirror = require('keymirror');
 
 module.exports = keyMirror({
-  INDEX: null,
+  INDEX: '/',
   LOGIN: null,
+  LOGOUT: null,
   PASSWORD_RESET: null,
   DAY: null,
   PROFILE: null,

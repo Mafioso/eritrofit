@@ -72,6 +72,7 @@ gulp.task('default', ['clean'], function(callback) {
 });
 
 gulp.task('watch', ['default'], function() {
+  gulp.watch('src/sass/**/*.sass', ['styles']);
   gulp.watch('src/**/*.html', ['html']);
   gulp.watch(['src/**/*.js', 'src/**/*.jsx'], ['browserify']);
 });

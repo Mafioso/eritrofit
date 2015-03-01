@@ -1,15 +1,29 @@
 'use strict';
 
-window.React = require('react');
+window.React = require('react/addons');
 var RouterActions = require('./actions/RouterActions');
 var RouterStore = require('./stores/RouterStore');
 var _ = require('lodash');
+var moment = require('moment');
+require('moment/locale/ru');
+moment.lang('ru');
+moment.locale('en', {
+  calendar: {
+    sameDay: '[today]'
+  }
+});
+moment.locale('ru', {
+  calendar: {
+    sameDay: '[сегодня]'
+  }
+});
 // var page = require('page');
 
 var views = require('./constants/views');
 // var routes = require('./constants/routes');
 
 var Login = require('./views/login.jsx');
+var Day = require('./views/day.jsx');
 
 var App = React.createClass({
   getInitialState: function() {
@@ -61,9 +75,6 @@ var App = React.createClass({
     var params = _.assign(this.state.params, { current_url: this.state.current_url });
 
     switch(this.state.view) {
-      case views.INDEX:
-        view = 'index';
-        break;
       case views.LOGIN:
         view = <Login params={params} />;
         break;
@@ -71,7 +82,7 @@ var App = React.createClass({
           view = 'reset password';
           break;
       case views.DAY:
-        view = 'day';
+        view = <Day params={params} />;
         break;
       case views.PROFILE:
         view = 'profile';
@@ -88,8 +99,11 @@ var App = React.createClass({
       case views.USERS:
         view = 'users';
         break;
+      case views.NOT_FOUND:
+        view ='404, not found';
+        break;
       default:
-        view = '404!!!!';
+        view = 'view not set';
         // NOT_FOUND
         break;
     }

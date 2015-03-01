@@ -23,9 +23,18 @@ module.exports = flux.createStore({
         }
       });
     });
+    AuthActions.logout.listen(function() {
+      api.logout();
+      RouterActions.redirectPrompt({
+        target_url: '/login',
+        current_url: '/logout',
+        current_view: ''
+      });
+    });
     AuthActions.signInSuccess.listen(function(payload) {
       RouterActions.redirectPrompt(payload);
     });
+
   },
   config: {
     errors: {

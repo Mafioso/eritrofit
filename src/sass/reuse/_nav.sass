@@ -1,7 +1,7 @@
 .nav
   width: 100%
   position: relative
-  z-index: 9999
+  z-index: 1
 
 .nav-list,
 .nav-list-extra
@@ -29,7 +29,10 @@
     font-family: $stack-default
 
   &--logo
+    position: relative
     float: left
+    color: $color-primary
+    z-index: 2
 
   &--user
     padding-top: .5rem

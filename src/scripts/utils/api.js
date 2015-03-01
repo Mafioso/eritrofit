@@ -25,5 +25,8 @@ module.exports = {
   },
   getAuth: function() {
     return ref.getAuth();
+  },
+  logout: function() {
+    ref.unauth();
   }
 };

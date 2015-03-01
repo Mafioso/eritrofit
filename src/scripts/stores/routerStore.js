@@ -2,11 +2,13 @@
 
 var flux = require('fluxstream');
 var RouterActions = require('../actions/RouterActions');
+var AuthActions = require('../actions/AuthActions');
 var api = require('../utils/api');
 var views = require('../constants/views');
 var routes = require('../constants/routes');
 var RoutePattern = require('route-pattern');
 var _ = require('lodash');
+var moment = require('moment');
 // var typeCheck = require('type-check').typeCheck;
 
 
@@ -29,6 +31,14 @@ module.exports = flux.createStore({
       // 2. current_url - transition from this url
       // 3. current_view - transition from this view
 
+      console.log(payload);
+
+      if (newState.target_url === routes.LOGOUT) {
+        // do absolutely nothing and wait for redirect
+        AuthActions.logout();
+        return;
+      }
+
       // CHECK IF VIEW EXISTS
       // after check newState should contain
       // 1. target_view - transition to this view
@@ -36,8 +46,8 @@ module.exports = flux.createStore({
       for (var i in matchers) {
         if (matchers[i].pattern.matches(payload.target_url)) {
           var params = matchers[i].pattern.match(payload.target_url);
-          payload.target_view = matchers[i].view;
-          payload.params = params.pathParams;
+          newState.target_view = matchers[i].view;
+          newState.params = params.pathParams;
         }
       }
 
@@ -61,11 +71,13 @@ module.exports = flux.createStore({
         // 3. props or view update both change router's state, so rerender will be initiated,
         //    no need to split them into different channels
 
-        if (_.indexOf([views.LOGIN, views.PASSWORD_RESET], newState.target_view) > - 1) {
+        if (_.indexOf([views.LOGIN, views.PASSWORD_RESET, views.INDEX], newState.target_view) > - 1) {
           // redirect!
+          var today = moment().format('DDMMYY');
           newState.update_url = true;
-          newState.target_view = views.INDEX;
-          newState.target_url = routes.INDEX;
+          newState.target_view = views.DAY;
+          newState.target_url = '/day/'+today;
+          newState.params = { day: today };
         }
 
         // TODO: check for rights!

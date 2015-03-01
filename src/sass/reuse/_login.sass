@@ -23,19 +23,12 @@
   padding: .5rem 1rem
   position: relative
   margin-bottom: -2px
-  border: 2px solid $color-neutral-dark
+  border: 2px solid $color-white
+  background-color: hsla(0,0,100%,.84)
   &:focus
     z-index: 1
-    border-color: $color-neutral-darker
+    background-color: $color-white
     outline: 0
-  &--email
-    border-top-left-radius: $radius-small
-    border-top-right-radius: $radius-small
-  &--password
-    border-bottom-left-radius: $radius-small
-    border-bottom-right-radius: $radius-small
-  &--single
-    border-radius: $radius-small
 
 .login-submit
   width: 100%
@@ -45,7 +38,6 @@
   background-color: $color-awesome
   padding: .5rem 1rem
   color: $color-white
-  border-radius: $radius-small
   &:hover
     background-color: $color-awesome-vivid
   &:disabled
@@ -64,8 +56,8 @@
   text-align: center
 
 .login-line--error
-  background-color: rgba($color-primary, .5)
-  border-radius: $radius-small
+  background-color: rgba($color-primary, .84)
+  border: 2px solid $color-primary
   padding: .5rem 1rem
 
 .login-link
