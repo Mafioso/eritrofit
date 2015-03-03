@@ -39,7 +39,7 @@ gulp.task('browserify', function() {
       transform: 'reactify',
       extensions: ['.jsx']
     }))
-    // .pipe($.uglify())
+    .pipe($.uglify())
     .pipe($.concat('app.js'))
     .pipe(gulp.dest('dist/scripts'));
 });
