@@ -1,25 +1,90 @@
-.input-file
-  position: absolute
-  bottom: 0
-  right: 0
-  opacity: 0
-  display: block
-  border: 0
-  padding: 0
-  margin: 0
-  font-size: 1000px
-  height: 300px
-  &:hover
-    cursor: pointer
+.input
+  position: relative
+  line-height: inherit
+  max-width: 100%
 
-.input-textarea
-  position: absolute
-  top: 0
-  bottom: 0
-  left: 0
-  right: 0
+.input-shadow,
+.input-placeholder,
+.input-field
+  font: inherit
+  padding: 0 calc(.25rem + 1px) // additional space to prevent inputs from horizontal scrolling
+  border: 1px solid transparent
+  white-space: pre-wrap
+  overflow: hidden
+  border-radius: 2px
+
+.input-shadow,
+.input-placeholder
+  color: transparent
+
+
+.input-field
   display: block
-  border: 0
+  position: absolute
+  z-index: 1
+  top: 0
+  left: 0
   margin: 0
-  padding: 0
-  background: transparent
+  width: 100%
+  height: 100%
+  padding: 0 .25rem
+  background-color: transparent
+  &:focus
+    outline: 0
+  &::-webkit-input-placeholder
+    color: $color-secondary
+  &:-moz-placeholder
+    color: $color-secondary
+  &::-moz-placeholder
+    color: $color-secondary
+  &:-ms-input-placeholder
+    color: $color-secondary
+
+
+.input--textarea
+  line-height: 1.5rem
+  .input-field
+    resize: none
+
+.input--text
+  display: inline-block
+  vertical-align: top
+
+.input-placeholder
+  display: none
+
+.input--defaultState
+  .input-shadow
+    display: none
+  .input-placeholder
+    display: block
+    position: static
+    font: inherit
+    color: transparent
+
+
+// .input-file
+//   position: absolute
+//   bottom: 0
+//   right: 0
+//   opacity: 0
+//   display: block
+//   border: 0
+//   padding: 0
+//   margin: 0
+//   font-size: 1000px
+//   height: 300px
+//   &:hover
+//     cursor: pointer
+//
+// .input-textarea
+//   position: absolute
+//   top: 0
+//   bottom: 0
+//   left: 0
+//   right: 0
+//   display: block
+//   border: 0
+//   margin: 0
+//   padding: 0
+//   background: transparent

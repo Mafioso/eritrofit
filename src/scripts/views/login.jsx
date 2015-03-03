@@ -46,7 +46,6 @@ var Login = React.createClass({
   },
   handleSubmit: function(event) {
     event.preventDefault();
-    console.log(this.props.params.next_url ? this.props.params.next_url : routes.INDEX, 'target_url');
 
     this.setState({ waiting: true });
 
@@ -62,7 +61,7 @@ var Login = React.createClass({
   },
   render: function() {
     var error;
-    console.log(this.state);
+
     switch(this.state.error.code) {
       case 'EMPTY_PASSWORD':
       case 'INVALID_PASSWORD':

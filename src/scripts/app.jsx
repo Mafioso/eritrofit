@@ -23,6 +23,7 @@ var views = require('./constants/views');
 // var routes = require('./constants/routes');
 
 var Login = require('./views/login.jsx');
+var ResetPassword = require('./views/resetPassword.jsx');
 var Day = require('./views/day.jsx');
 
 var App = React.createClass({
@@ -78,9 +79,9 @@ var App = React.createClass({
       case views.LOGIN:
         view = <Login params={params} />;
         break;
-        case views.PASSWORD_RESET:
-          view = 'reset password';
-          break;
+      case views.PASSWORD_RESET:
+        view = <ResetPassword />;
+        break;
       case views.DAY:
         view = <Day params={params} />;
         break;

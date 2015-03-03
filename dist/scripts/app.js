@@ -50288,12 +50288,24 @@ module.exports = flux.createActions([
 var flux = require('fluxstream');
 
 module.exports = flux.createActions([
+  'getDay',
+  'setDay',
+  'setFetchError',
+  'createWorkout',
+  'createWorkoutSuccess'
+]);
+
+},{"fluxstream":3}],208:[function(require,module,exports){
+'use strict';
+var flux = require('fluxstream');
+
+module.exports = flux.createActions([
   'popstate',       // fires every time when url changes
   'setView',        // subscription for RouteHandler, fires when there is a need to switch view
   'redirectPrompt'
 ]);
 
-},{"fluxstream":3}],208:[function(require,module,exports){
+},{"fluxstream":3}],209:[function(require,module,exports){
 'use strict';
 
 var Icon = React.createClass({displayName: "Icon",
@@ -50308,7 +50320,40 @@ var Icon = React.createClass({displayName: "Icon",
 
 module.exports = Icon;
 
-},{}],209:[function(require,module,exports){
+},{}],210:[function(require,module,exports){
+'use strict';
+
+module.exports = React.createClass({displayName: "exports",
+  handleChange: function(event) {
+    this.setState({ inputValue: event.target.value });
+    this.props.onTextChange(event.target.value);
+  },
+  componentDidMount: function() {
+    if (this.props.autoFocus) {
+      this.refs[this.props.name].getDOMNode().focus();
+    }
+  },
+  getInitialState: function() {
+    return { inputValue: '' };
+  },
+  render: function() {
+    return (
+      React.createElement("div", {className: "input input--textarea"}, 
+        React.createElement("div", {className: "input-shadow"}, 
+          this.state.inputValue + '\n'
+        ), 
+        React.createElement("textarea", {
+          ref: this.props.name, 
+          autoFocus: this.props.autoFocus, 
+          className: "input-field", 
+          placeholder: this.props.placeholder, 
+          onChange: this.handleChange})
+      )
+    );
+  }
+});
+
+},{}],211:[function(require,module,exports){
 'use strict';
 
 var Icon = require('./icon.jsx');
@@ -50354,7 +50399,27 @@ module.exports = React.createClass({displayName: "exports",
   }
 });
 
-},{"../utils/api":217,"./icon.jsx":208,"moment":33}],210:[function(require,module,exports){
+},{"../utils/api":224,"./icon.jsx":209,"moment":33}],212:[function(require,module,exports){
+'use strict';
+
+module.exports = React.createClass({displayName: "exports",
+  _render: true,
+  // PROPS
+  // userId
+  // requiredStatus
+  componentWillMount: function() {
+    // check for rights here
+  },
+  render: function() {
+    var children = null;
+    if (this._render) {
+      children = this.props.children;
+    }
+    return (children);
+  }
+});
+
+},{}],213:[function(require,module,exports){
 'use strict';
 
 var Icon = require('./icon.jsx');
@@ -50409,7 +50474,7 @@ module.exports = React.createClass({displayName: "exports",
   }
 });
 
-},{"./icon.jsx":208,"./scrollerItem.jsx":211,"moment":33}],211:[function(require,module,exports){
+},{"./icon.jsx":209,"./scrollerItem.jsx":214,"moment":33}],214:[function(require,module,exports){
 'use strict';
 
 // var Icon = require('./icon.jsx');
@@ -50455,7 +50520,214 @@ module.exports = React.createClass({displayName: "exports",
   }
 });
 
-},{"moment":33}],212:[function(require,module,exports){
+},{"moment":33}],215:[function(require,module,exports){
+'use strict';
+
+var WorkoutsForm = require('./workoutsForm.jsx');
+var WorkoutsItem = require('./workoutsItem.jsx');
+var Permit = require('./permit.jsx');
+var DayActions = require('../actions/DayActions');
+var DayStore = require('../stores/DayStore');
+var _ = require('lodash');
+
+module.exports = React.createClass({displayName: "exports",
+  getInitialState: function() {
+    return ({
+      showForm: false
+    });
+  },
+  componentDidMount: function() {
+    DayStore.streams.createWorkoutSuccess.listen(function(payload) {
+      console.log(payload, 'create workout success');
+    });
+  },
+  handleWorkoutSubmit: function(text) {
+    // var workouts = this.state.workouts;
+    // workouts.push(workout);
+    // this.setState({
+    //   workouts: workouts,
+    //   showForm: false
+    // });
+    DayActions.createWorkout({
+      text: text,
+      day: this.props.dayId
+    });
+  },
+  render: function() {
+    var nextWorkoutIdx = 1;
+    var workouts = [];
+    var workoutItems;
+    console.log(this.props.dayData);
+    // if (this.props.dayData) {
+    //   workouts = _.values(this.props.dayData.workouts);
+    //   nextWorkoutIdx = workouts.length + 1;
+    // }
+    //
+    // _.map(workouts, function(workout) {
+    //   return
+    // });
+
+    return(
+      React.createElement("div", {className: "workouts-container"}, 
+        React.createElement(Permit, {userId: "userid", requiredStatus: "sudo"}, 
+          React.createElement(WorkoutsForm, {
+            showForm: this.state.showForm, 
+            idx: nextWorkoutIdx, 
+            onWorkoutSubmit: this.handleWorkoutSubmit})
+        )
+      )
+    );
+  }
+});
+
+},{"../actions/DayActions":207,"../stores/DayStore":222,"./permit.jsx":212,"./workoutsForm.jsx":216,"./workoutsItem.jsx":217,"lodash":31}],216:[function(require,module,exports){
+'use strict';
+
+var api = require('../utils/api');
+var InputTextarea = require('./inputTextarea.jsx');
+var moment = require('moment');
+
+module.exports = React.createClass({displayName: "exports",
+  getInitialState: function() {
+    return ({
+      error: '',
+      submitting: false,
+      showForm: false,
+      author: '',
+      username: '',
+      text: ''
+    });
+  },
+  componentDidMount: function() {
+    this.setState({
+      showForm: this.props.showForm
+    });
+  },
+  handleNewWorkoutTextUpdate: function(text) {
+    this.setState({
+      text: text
+    });
+  },
+  toggleForm: function() {
+    this.setState({
+      showForm: !this.state.showForm,
+      submitting: false // TODO: REMOVE THIS!!!
+    });
+  },
+  handleFormSubmit: function(event) {
+    event.preventDefault();
+    this.setState({
+      submitting: true
+    });
+
+    // if (this.state.text.trim().length === 0) {
+    //   this.setState({
+    //     error: 'Вы забыли описать упражнения для комплекса',
+    //     submitting: false
+    //   });
+    //   return;
+    // } else {
+    //   // REMOVE THIS LATER,
+    //   // error should be emptied by event from store!
+    //   this.setState({
+    //     error: ''
+    //   });
+    // }
+
+    this.props.onWorkoutSubmit(this.state.text);
+  },
+  render: function() {
+    // var userpic = api.getLargeBase64Userpic(this.props.author);
+    var userpic;
+    var form;
+    var toggleFormButtonText = '+ Добавить комплекс';
+    if (this.state.showForm) {
+      toggleFormButtonText = 'Отмена';
+      form = (React.createElement("form", {onSubmit: this.handleFormSubmit, className: "workouts-form"}, 
+        React.createElement("div", {className: "workout-userpic figure-userpic"}, 
+          React.createElement("img", {src: userpic})
+        ), 
+        React.createElement("div", {className: "workout"}, 
+          React.createElement("div", {className: "workout-meta"}, 
+            React.createElement("strong", {className: "workout-meta-user"}, 
+              this.props.username
+            )
+          ), 
+          React.createElement("div", {className: "workout-heading"}, "Комплекс ", this.props.idx, "."), 
+          React.createElement("div", {className: "workout-body"}, 
+            React.createElement(InputTextarea, {
+              name: 'workout'+this.props.idx, 
+              autoFocus: true, 
+              onTextChange: this.handleNewWorkoutTextUpdate, 
+              placeholder: "Введите инструкции"})
+          ), 
+          React.createElement("div", {className: "workout-footer"}, 
+            React.createElement("span", {className: "workout-footer-item"}, 
+              this.state.error
+            ), 
+            React.createElement("button", {className: "workout-submit", type: "submit", disabled: this.state.submitting}, 
+              "Сохранить"
+            )
+          )
+        )
+      ));
+    }
+    return (
+      React.createElement("div", null, 
+        form, 
+        React.createElement("button", {onClick: this.toggleForm, className: "workout-add", type: "button"}, 
+          toggleFormButtonText
+        )
+      )
+    );
+  }
+});
+
+},{"../utils/api":224,"./inputTextarea.jsx":210,"moment":33}],217:[function(require,module,exports){
+'use strict';
+
+var api = require('../utils/api');
+var moment = require('moment');
+
+module.exports = React.createClass({displayName: "exports",
+  // PROPS:
+  // author
+  // timestamp
+  // username
+  // workoutIndex
+  // text
+  // submissions
+  // onWorkoutSubmit
+  handleWorkoutSubmit: function() {
+
+  },
+  render: function() {
+    var userpic = api.getLargeBase64Userpic(this.props.author);
+    var timestamp = moment(this.props.timestamp).format('H:mm');
+    return (
+      React.createElement("li", {className: "workouts-item"}, 
+        React.createElement("div", {className: "workout-userpic figure-userpic"}, 
+          React.createElement("img", {src: userpic})
+        ), 
+        React.createElement("div", {className: "workout"}, 
+          React.createElement("div", {className: "workout-meta"}, 
+            React.createElement("strong", {className: "workout-meta-user"}, this.props.username), ", ", timestamp 
+          ), 
+          React.createElement("div", {className: "workout-heading"}, "Комплекс ", this.props.workoutIndex, "."), 
+          React.createElement("div", {className: "workout-body"}, 
+            this.props.text
+          ), 
+          React.createElement("div", {className: "workout-footer"}, 
+            React.createElement("span", {className: "workout-footer-item"}, "0 (загруженные результаты)"), 
+            React.createElement("button", {onClick: this.handleWorkoutSubmit, className: "workout-submit", type: "button"}, "Загрузить результат")
+          )
+        )
+      )
+    );
+  }
+});
+
+},{"../utils/api":224,"moment":33}],218:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -50472,7 +50744,7 @@ module.exports = {
   NOT_FOUND: '/404'
 };
 
-},{}],213:[function(require,module,exports){
+},{}],219:[function(require,module,exports){
 'use strict';
 
 var keyMirror = require('keymirror');
@@ -50491,7 +50763,7 @@ module.exports = keyMirror({
   NOT_FOUND: null
 });
 
-},{"keymirror":30}],214:[function(require,module,exports){
+},{"keymirror":30}],220:[function(require,module,exports){
 'use strict';
 
 window.React = require('react/addons');
@@ -50517,6 +50789,7 @@ var views = require('./constants/views');
 // var routes = require('./constants/routes');
 
 var Login = require('./views/login.jsx');
+var ResetPassword = require('./views/resetPassword.jsx');
 var Day = require('./views/day.jsx');
 
 var App = React.createClass({displayName: "App",
@@ -50572,9 +50845,9 @@ var App = React.createClass({displayName: "App",
       case views.LOGIN:
         view = React.createElement(Login, {params: params});
         break;
-        case views.PASSWORD_RESET:
-          view = 'reset password';
-          break;
+      case views.PASSWORD_RESET:
+        view = React.createElement(ResetPassword, null);
+        break;
       case views.DAY:
         view = React.createElement(Day, {params: params});
         break;
@@ -50612,7 +50885,7 @@ var App = React.createClass({displayName: "App",
 
 React.render(React.createElement(App, null), document.getElementById('main'));
 
-},{"./actions/RouterActions":207,"./constants/views":213,"./stores/RouterStore":216,"./views/day.jsx":219,"./views/login.jsx":220,"lodash":31,"moment":33,"moment/locale/ru":32,"react/addons":35}],215:[function(require,module,exports){
+},{"./actions/RouterActions":208,"./constants/views":219,"./stores/RouterStore":223,"./views/day.jsx":226,"./views/login.jsx":227,"./views/resetPassword.jsx":228,"lodash":31,"moment":33,"moment/locale/ru":32,"react/addons":35}],221:[function(require,module,exports){
 'use strict';
 
 var flux = require('fluxstream');
@@ -50658,7 +50931,76 @@ module.exports = flux.createStore({
   }
 });
 
-},{"../actions/AuthActions":206,"../actions/RouterActions":207,"../constants/routes":212,"../utils/api":217,"fluxstream":3,"type-check":198}],216:[function(require,module,exports){
+},{"../actions/AuthActions":206,"../actions/RouterActions":208,"../constants/routes":218,"../utils/api":224,"fluxstream":3,"type-check":198}],222:[function(require,module,exports){
+'use strict';
+
+var flux = require('fluxstream');
+var DayActions = require('../actions/DayActions');
+var api = require('../utils/api');
+var moment = require('moment');
+var _ = require('lodash');
+
+module.exports = flux.createStore({
+  init: function() {
+    DayActions.getDay.listen(function(payload) {
+      var workoutStreamByDay = api.getWorkoutStreamByDay(payload.day);
+      workoutStreamByDay.onValue(function(payload) {
+        console.log(payload, 'update workouts list');
+      });
+      // var fetchDayWorkouts = api.getWorkoutsByDay(payload.day);
+      // fetchDayWorkouts.onValue(function(payload) {
+      //   console.log(payload, 'payload');
+      // });
+      // var day = payload.day;
+      // var fetchDayData = api.getDayById(day);
+      // fetchDayData.onValue(function(payload) {
+      //   // payload contains workouts
+      //   var workouts = [];
+      //   // extend payload with user info
+      //   if (payload && payload.workouts) {
+      //     _.forEach(_.keys(payload.workouts), function(key) {
+      //       var username = api.getUsernameById(payload.workouts[key].author);
+      //       workouts.push(_.extend(payload.workouts[key], {key: key, username: username}));
+      //     });
+      //   }
+      //   DayActions.setDay({ workouts: workouts });
+      // });
+    });
+    DayActions.createWorkout.listen(function(payload) {
+      // payload consists of workout instructions (text) and day
+      // what info workout should have?
+      // 1. local timestamp, assume it's correct
+      // 2. author id
+      // 3. text
+      // 4. day
+      var timestamp = moment().utc().format();
+      var authorId = api.getCurrentUserId();
+      if (timestamp && authorId && payload.text && payload.day) {
+        var setWorkout = api.setWorkout({
+          timestamp: timestamp,
+          author: authorId,
+          text: payload.text
+        }, payload.day);
+        setWorkout.onValue(function(payload) {
+          DayActions.createWorkoutSuccess(payload);
+        });
+      }
+    });
+  },
+  config: {
+    errors: {
+      action: DayActions.setFetchError
+    },
+    setDay: {
+      action: DayActions.setDay
+    },
+    createWorkoutSuccess: {
+      action: DayActions.createWorkoutSuccess
+    }
+  }
+});
+
+},{"../actions/DayActions":207,"../utils/api":224,"fluxstream":3,"lodash":31,"moment":33}],223:[function(require,module,exports){
 'use strict';
 
 var flux = require('fluxstream');
@@ -50770,17 +51112,19 @@ module.exports = flux.createStore({
   }
 });
 
-},{"../actions/AuthActions":206,"../actions/RouterActions":207,"../constants/routes":212,"../constants/views":213,"../utils/api":217,"fluxstream":3,"lodash":31,"moment":33,"route-pattern":196}],217:[function(require,module,exports){
+},{"../actions/AuthActions":206,"../actions/RouterActions":208,"../constants/routes":218,"../constants/views":219,"../utils/api":224,"fluxstream":3,"lodash":31,"moment":33,"route-pattern":196}],224:[function(require,module,exports){
 'use strict';
 
 var Bacon = require('baconjs');
 var Firebase = require('firebase');
-var ref = new Firebase('https://endurance-almaty.firebaseio.com');
+var firebaseUrl = 'https://endurance-almaty.firebaseio.com';
+var ref = new Firebase(firebaseUrl);
 var _ = require('lodash');
 var JsSHA = require('jssha');
 var Identicon = require('./identicon');
 
 module.exports = {
+  // USER AUTHENTICATION
   tryAuth: function(email, password) {
     return Bacon.fromCallback(function(email, password, sink) {
       if (email.length === 0) {
@@ -50798,30 +51142,87 @@ module.exports = {
       });
     }, email, password);
   },
+  // CHECK IF USER IS AUTHENTICATED, RETURNS AUTHENTICATION STATE
   getAuth: function() {
     return ref.getAuth();
   },
+  // USER LOGOUT
   logout: function() {
     ref.unauth();
   },
-  getEmail: function() {
+  // GET USER'S EMAIL
+  getCurrentUserEmail: function() {
     return ref.getAuth().password.email;
   },
+  // GET CURRENT USERS'S ID
+  getCurrentUserId: function() {
+    return ref.getAuth().uid;
+  },
+  // GENERATES 32x32px USERPIC
   getBase64Userpic: function(text) {
     var textSHA = new JsSHA(text, 'TEXT');
     var hash = textSHA.getHash('SHA-1', 'HEX');
     var data = new Identicon(hash, 32, 4/32).toString();
     return 'data:image/png;base64,' + data;
   },
+  // GENERATES 64x64px USERPIC
   getLargeBase64Userpic: function(text) {
     var textSHA = new JsSHA(text, 'TEXT');
     var hash = textSHA.getHash('SHA-1', 'HEX');
     var data = new Identicon(hash, 48, 4/48).toString();
     return 'data:image/png;base64,' + data;
+  },
+  // GET DAY'S WORKOUTS
+  getWorkoutStreamByDay: function(day) {
+    var _workoutsRef = ref.child('workouts');
+    var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
+    return Bacon.fromBinder(function(sink) {
+      _dayWorkoutsRef.on('value', function(snapshot) {
+        var workoutsSelection = _.values(snapshot.val());
+        _.forEach(workoutsSelection, function(workoutId) {
+          _workoutsRef.child(workoutId).on('value', function(workoutSnapshot) {
+            sink(_.extend(workoutSnapshot.val(), {key: workoutId}));
+          });
+        });
+      });
+    });
+    // var _dayWorkouts = ref.child('days/' + day + '/workouts');
+  },
+  // GET DAY DATA BY ID (id format: DDMMYY)
+  // getDayById: function(day) {
+  //   var _ref = ref.child('days/'+day);
+  //   var _workoutRef = ref.child('workouts');
+  //   return Bacon.fromBinder(function(sink) {
+  //     _ref.on('value', function(snapshot) {
+  //       var day = snapshot.val();
+  //       _ref
+  //
+  //       console.log(snapshot.val(), 'value updated');
+  //       sink(snapshot.val());
+  //     });
+  //   });
+  // },
+  // APPEND WORKOUT TO A DAY
+  setWorkout: function(workout, day) {
+    var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
+    var _workoutsRef = ref.child('workouts');
+    return Bacon.fromCallback(function(workout, sink){
+      var workoutKey =  _dayWorkoutsRef.push(_workoutsRef.push(workout).key()).key();
+      sink(workoutKey);
+    }, workout);
+  },
+  getUsernameById: function(userId) {
+    var _usernameRef = ref.child('users/'+userId+'/username');
+    var username = '';
+    _usernameRef.once('value', function(snapshot) {
+      console.log(snapshot.val(), 'username snapshot');
+      username = snapshot.val();
+    });
+    return username;
   }
 };
 
-},{"./identicon":218,"baconjs":1,"firebase":2,"jssha":29,"lodash":31}],218:[function(require,module,exports){
+},{"./identicon":225,"baconjs":1,"firebase":2,"jssha":29,"lodash":31}],225:[function(require,module,exports){
 'use strict';
 
 var PNGlib = require('pnglib');
@@ -50918,65 +51319,55 @@ Identicon.prototype = {
 
 module.exports = Identicon;
 
-},{"pnglib":34}],219:[function(require,module,exports){
+},{"pnglib":34}],226:[function(require,module,exports){
 'use strict';
 
 var Nav = require('../components/nav.jsx');
 var Scroller = require('../components/scroller.jsx');
 var api = require('../utils/api');
+var Workouts = require('../components/workouts.jsx');
+var DayActions = require('../actions/DayActions');
+var DayStore = require('../stores/DayStore');
 
 module.exports = React.createClass({displayName: "exports",
+  getInitialState: function() {
+    return({
+      dayData: null
+    });
+  },
+  componentWillMount: function() {
+    // CREATE A LISTENER FOR A NEW DAY DATA
+    var self = this;
+    DayStore.streams.setDay.listen(function(payload) {
+      console.log(payload, 'dayData');
+      self.setState({
+        dayData: payload
+      });
+    });
+  },
+  componentDidMount: function() {
+    // UDPATE DAY DATA FIRST TIME
+    DayActions.getDay({ day: this.props.params.day });
+  },
+  componentWillReceiveProps: function(nextProps) {
+    // UDPATE DAY DATA ON PROPS UPDATE
+    DayActions.getDay({ day: nextProps.params.day });
+  },
   render: function() {
-    var text = "9-minute AMRAP: \n15 toes-to-bars \n10 deadlifts";
+    console.log(this.props.params.day, 'dayId');
     return (
       React.createElement("div", null, 
-        React.createElement(Nav, {username: api.getEmail()}), 
+        React.createElement(Nav, {username: api.getCurrentUserEmail()}), 
         React.createElement(Scroller, {activeDay: this.props.params.day}), 
-        React.createElement("ul", {className: "workouts"}, 
-          React.createElement("li", {className: "workouts-item"}, 
-            React.createElement("div", {className: "workout-userpic figure-userpic"}, 
-              React.createElement("img", {src: api.getLargeBase64Userpic('igeeko@gmail.com')})
-            ), 
-            React.createElement("div", {className: "workout"}, 
-              React.createElement("div", {className: "workout-meta"}, 
-                React.createElement("strong", {className: "workout-meta-user"}, "Username"), ", datetime"
-              ), 
-              React.createElement("div", {className: "workout-heading"}, "Комплекс 1."), 
-              React.createElement("div", {className: "workout-body"}, 
-                text
-              ), 
-              React.createElement("div", {className: "workout-footer"}, 
-                React.createElement("span", {className: "workout-footer-item"}, "0 submissions"), 
-                React.createElement("button", {className: "workout-submit", type: "button"}, "Submit result")
-              )
-            )
-          ), 
-          React.createElement("li", {className: "workouts-item"}, 
-            React.createElement("div", {className: "workout-userpic figure-userpic"}, 
-              React.createElement("img", {src: api.getLargeBase64Userpic('igeeko@gmail.com')})
-            ), 
-            React.createElement("div", {className: "workout"}, 
-              React.createElement("div", {className: "workout-meta"}, 
-                React.createElement("strong", {className: "workout-meta-user"}, "Username"), ", datetime"
-              ), 
-              React.createElement("div", {className: "workout-heading"}, "Комплекс 2."), 
-              React.createElement("div", {className: "workout-body"}, 
-                text
-              ), 
-              React.createElement("div", {className: "workout-footer"}, 
-                React.createElement("span", {className: "workout-footer-item"}, "0 submissions"), 
-                React.createElement("button", {className: "workout-submit", type: "button"}, "Submit result")
-              )
-            )
-          )
-        ), 
-        React.createElement("button", {className: "workout-add"}, "+ Add workout")
+          React.createElement(Workouts, {
+            dayId: this.props.params.day, 
+            dayData: this.state.dayData})
       )
     );
   }
 });
 
-},{"../components/nav.jsx":209,"../components/scroller.jsx":210,"../utils/api":217}],220:[function(require,module,exports){
+},{"../actions/DayActions":207,"../components/nav.jsx":211,"../components/scroller.jsx":213,"../components/workouts.jsx":215,"../stores/DayStore":222,"../utils/api":224}],227:[function(require,module,exports){
 'use strict';
 
 var Icon = require('../components/icon.jsx');
@@ -51025,7 +51416,6 @@ var Login = React.createClass({displayName: "Login",
   },
   handleSubmit: function(event) {
     event.preventDefault();
-    console.log(this.props.params.next_url ? this.props.params.next_url : routes.INDEX, 'target_url');
 
     this.setState({ waiting: true });
 
@@ -51041,7 +51431,7 @@ var Login = React.createClass({displayName: "Login",
   },
   render: function() {
     var error;
-    console.log(this.state);
+
     switch(this.state.error.code) {
       case 'EMPTY_PASSWORD':
       case 'INVALID_PASSWORD':
@@ -51100,4 +51490,81 @@ var Login = React.createClass({displayName: "Login",
 
 module.exports = Login;
 
-},{"../actions/AuthActions":206,"../components/icon.jsx":208,"../constants/routes":212,"../constants/views":213,"../stores/AuthStore":215}]},{},[214])
+},{"../actions/AuthActions":206,"../components/icon.jsx":209,"../constants/routes":218,"../constants/views":219,"../stores/AuthStore":221}],228:[function(require,module,exports){
+'use strict';
+
+var Icon = require('../components/icon.jsx');
+
+module.exports = React.createClass({displayName: "exports",
+  getInitialState: function() {
+    return {
+      error: {code: ''}
+    };
+  },
+  componentDidUpdate: function(prevProps, prevState) {
+    // keep focus in email field
+    if (this.state.error) {
+      switch(this.state.error.code) {
+        case 'EMPTY_EMAIL':
+          this.refs.loginEmail.getDOMNode().focus();
+          break;
+        case 'EMPTY_PASSWORD':
+          this.refs.loginPassword.getDOMNode().focus();
+          break;
+        case 'INVALID_USER':
+          this.refs.loginEmail.getDOMNode().select();
+          break;
+        default:
+          this.refs.loginEmail.getDOMNode().focus();
+          break;
+      }
+    } else {
+      this.refs.loginEmail.getDOMNode().focus();
+    }
+  },
+  handleSubmit: function(event) {
+    event.preventDefault();
+    
+    this.setState({
+      error: {
+        code:'INVALID_USER'
+      }
+    });
+  },
+  render: function() {
+    var error;
+    switch(this.state.error.code) {
+      case 'EMPTY_EMAIL':
+      case 'INVALID_USER':
+        error = (React.createElement("div", {className: "login-line login-line--error"}, "Такого пользователя не существует"));
+        break;
+      default:
+        break;
+    }
+    return(
+      React.createElement("form", {className: "login", onSubmit: this.handleSubmit}, 
+        React.createElement("div", {className: "login-container"}, 
+          React.createElement("div", {className: "login-heading"}, 
+            React.createElement(Icon, {name: "logo"})
+          ), 
+          React.createElement("div", {className: "login-line"}, "Восстановление пароля"), 
+          React.createElement("input", {
+            autoFocus: true, 
+            className: "login-input login-input--single", 
+            type: "email", 
+            ref: "loginEmail", 
+            placeholder: "Email"}), 
+
+          error, 
+
+          React.createElement("button", {className: "login-submit", type: "submit"}, "Отправить письмо с инструкциями"), 
+          React.createElement("div", {className: "login-line login-line--alignright"}, 
+            "или ", React.createElement("a", {href: "/#/login"}, "вернуться назад")
+          )
+        )
+      )
+    );
+  }
+});
+
+},{"../components/icon.jsx":209}]},{},[220])

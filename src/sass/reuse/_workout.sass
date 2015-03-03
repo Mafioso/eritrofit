@@ -1,8 +1,19 @@
-.workouts
+.workouts,
+.workouts-form
   max-width: 40rem
   margin: auto
   list-style: none
   border-bottom: 2px solid $color-neutral-dark
+
+.workouts-form
+  display: flex
+  background-color: $color-white
+  border: 2px solid $color-neutral-dark
+  margin: -2px auto 0
+  .input-shadow,
+  .input-field
+    padding: 0 1rem 0 0
+    border: 0
 
 .workouts-item
   margin: 0
@@ -45,6 +56,10 @@
   background-color: $color-awesome
   padding: .5rem 1rem
   &:hover
+    background-color: $color-awesome-vivid
+  &:disabled
+    opacity: .5
+    cursor: default
     background-color: $color-awesome-vivid
 
 .workout-add
