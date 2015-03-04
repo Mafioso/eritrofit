@@ -10,36 +10,47 @@ var DayStore = require('../stores/DayStore');
 module.exports = React.createClass({
   getInitialState: function() {
     return({
-      dayData: null
-    });
-  },
-  componentWillMount: function() {
-    // CREATE A LISTENER FOR A NEW DAY DATA
-    var self = this;
-    DayStore.streams.setDay.listen(function(payload) {
-      console.log(payload, 'dayData');
-      self.setState({
-        dayData: payload
-      });
+      dayData: null,
+      workouts: {}
     });
   },
   componentDidMount: function() {
-    // UDPATE DAY DATA FIRST TIME
-    DayActions.getDay({ day: this.props.params.day });
+    // CREATE A LISTENER FOR A NEW DAY DATA
+    var self = this;
+    DayStore.streams.workoutsStream.listen(function(payload) {
+      if (payload && payload.key) {
+        var workouts = self.state.workouts;
+        workouts[payload.key] = payload;
+        if (self.isMounted()) {
+          self.setState({ workouts: workouts });
+        }
+      }
+    });
+    // SETUP DAY DATA STREAMS FOR THE FIRST TIME
+    DayActions.setupDayStreams({ day: this.props.params.day });
   },
   componentWillReceiveProps: function(nextProps) {
-    // UDPATE DAY DATA ON PROPS UPDATE
-    DayActions.getDay({ day: nextProps.params.day });
+    // EMPTY CURRENT STATE
+    this.setState({ workouts: {}}, function() {
+      // UPDATE DAY DATA STREAMS WITH THE NEW DAY
+      DayActions.setupDayStreams({ day: nextProps.params.day });
+    });
   },
+  // componentWillUnmount: function() {
+  //   DayStore.streams.workoutsStream.
+  // },
   render: function() {
-    console.log(this.props.params.day, 'dayId');
     return (
       <div>
-        <Nav username={api.getCurrentUserEmail()} />
-        <Scroller activeDay={this.props.params.day} />
-          <Workouts
-            dayId={this.props.params.day}
-            dayData={this.state.dayData} />
+        <Nav
+          user={this.props.user}
+          username={this.props.username} />
+        <Scroller
+          day={this.props.params.day} />
+        <Workouts
+          user={this.props.user}
+          items={this.state.workouts}
+          day={this.props.params.day} />
       </div>
     );
   }

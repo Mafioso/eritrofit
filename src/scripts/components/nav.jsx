@@ -6,7 +6,7 @@ var api = require('../utils/api');
 
 module.exports = React.createClass({
   render: function() {
-    var userpic = api.getBase64Userpic(this.props.username);
+    var userpic = api.getBase64Userpic(this.props.user);
     var today = moment().format('DDMMYY');
     var todayUrl = '/#/day/' + today;
     return (

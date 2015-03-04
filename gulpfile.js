@@ -39,7 +39,7 @@ gulp.task('browserify', function() {
       transform: 'reactify',
       extensions: ['.jsx']
     }))
-    .pipe($.uglify())
+    // .pipe($.uglify())
     .pipe($.concat('app.js'))
     .pipe(gulp.dest('dist/scripts'));
 });
@@ -54,7 +54,7 @@ gulp.task('html', function() {
 
 // Images
 gulp.task('images', function() {
-  return gulp.src('src/images/**/*')
+  return gulp.src('src/images/**/*.{jpg,png}')
   .pipe($.cache($.imagemin({
     optimizationLevel: 3,
     progressive: true,

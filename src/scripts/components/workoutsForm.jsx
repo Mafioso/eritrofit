@@ -2,22 +2,27 @@
 
 var api = require('../utils/api');
 var InputTextarea = require('./inputTextarea.jsx');
-var moment = require('moment');
+var DayStore = require('../stores/DayStore');
+var DayActions = require('../actions/DayActions');
 
 module.exports = React.createClass({
+  _userpic: api.getLargeBase64Userpic(api.getCurrentUserId()),
   getInitialState: function() {
     return ({
       error: '',
       submitting: false,
       showForm: false,
-      author: '',
-      username: '',
       text: ''
     });
   },
-  componentDidMount: function() {
-    this.setState({
-      showForm: this.props.showForm
+  componentWillMount: function() {
+    var self = this;
+    DayStore.streams.createWorkoutSuccess.listen(function() {
+      self.setState({
+        submitting: false,
+        showForm: false,
+        text: ''
+      });
     });
   },
   handleNewWorkoutTextUpdate: function(text) {
@@ -27,8 +32,7 @@ module.exports = React.createClass({
   },
   toggleForm: function() {
     this.setState({
-      showForm: !this.state.showForm,
-      submitting: false // TODO: REMOVE THIS!!!
+      showForm: !this.state.showForm
     });
   },
   handleFormSubmit: function(event) {
@@ -36,33 +40,19 @@ module.exports = React.createClass({
     this.setState({
       submitting: true
     });
-
-    // if (this.state.text.trim().length === 0) {
-    //   this.setState({
-    //     error: 'Вы забыли описать упражнения для комплекса',
-    //     submitting: false
-    //   });
-    //   return;
-    // } else {
-    //   // REMOVE THIS LATER,
-    //   // error should be emptied by event from store!
-    //   this.setState({
-    //     error: ''
-    //   });
-    // }
-
-    this.props.onWorkoutSubmit(this.state.text);
+    DayActions.createWorkout({
+      text: this.state.text,
+      day: this.props.day
+    });
   },
   render: function() {
-    // var userpic = api.getLargeBase64Userpic(this.props.author);
-    var userpic;
     var form;
     var toggleFormButtonText = '+ Добавить комплекс';
     if (this.state.showForm) {
       toggleFormButtonText = 'Отмена';
       form = (<form onSubmit={this.handleFormSubmit} className='workouts-form'>
         <div className='workout-userpic figure-userpic'>
-          <img src={userpic} />
+          <img src={this._userpic} />
         </div>
         <div className='workout'>
           <div className='workout-meta'>
@@ -70,11 +60,12 @@ module.exports = React.createClass({
               {this.props.username}
             </strong>
           </div>
-          <div className='workout-heading'>Комплекс {this.props.idx}.</div>
+          <div className='workout-heading'>Новый комплекс.</div>
           <div className='workout-body'>
             <InputTextarea
-              name={'workout'+this.props.idx}
+              name='workout_text'
               autoFocus={true}
+              text={this.state.text}
               onTextChange={this.handleNewWorkoutTextUpdate}
               placeholder='Введите инструкции' />
           </div>

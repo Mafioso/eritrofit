@@ -62,6 +62,11 @@ module.exports = flux.createStore({
 
       // USER AUTHORIZED?
       if (api.getAuth()) {
+        var userStream = api.getUserById(api.getCurrentUserId());
+        userStream.onValue(function(payload) {
+          AuthActions.userStream(payload);
+        });
+
         // HAVE RIGHTS FOR THIS PAGE?
         // 1. special case for login and password reset:
         //      - if popstate.next doesn't exist, set view to INDEX and target_url to routes.INDEX

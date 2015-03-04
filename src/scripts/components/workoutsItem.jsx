@@ -17,7 +17,12 @@ module.exports = React.createClass({
   },
   render: function() {
     var userpic = api.getLargeBase64Userpic(this.props.author);
-    var timestamp = moment(this.props.timestamp).format('H:mm');
+    var dayTime = new moment(this.props.day, 'DDMMYY');
+    var timestampFormat = 'H:mm';
+    if (!dayTime.isSame(moment(this.props.timestamp), 'day')) {
+      timestampFormat= 'D MMMM H:mm';
+    }
+    var timestamp = moment(this.props.timestamp).format(timestampFormat);
     return (
       <li className='workouts-item'>
         <div className='workout-userpic figure-userpic'>
@@ -27,7 +32,7 @@ module.exports = React.createClass({
           <div className='workout-meta'>
             <strong className='workout-meta-user'>{this.props.username}</strong>, { timestamp }
           </div>
-          <div className='workout-heading'>Комплекс {this.props.workoutIndex}.</div>
+          <div className='workout-heading'>Комплекс {this.props.index}.</div>
           <div className='workout-body'>
             {this.props.text}
           </div>

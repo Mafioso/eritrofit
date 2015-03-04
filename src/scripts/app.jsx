@@ -3,6 +3,7 @@
 window.React = require('react/addons');
 var RouterActions = require('./actions/RouterActions');
 var RouterStore = require('./stores/RouterStore');
+var AuthStore = require('./stores/AuthStore');
 var _ = require('lodash');
 var moment = require('moment');
 require('moment/locale/ru');
@@ -31,7 +32,9 @@ var App = React.createClass({
     return ({
       current_url: window.location.hash.substring(1),
       view: 'DEFAULT',
-      params: {}
+      params: {},
+      user: '',
+      username: ''
     });
   },
   componentWillMount: function() {
@@ -43,6 +46,14 @@ var App = React.createClass({
         current_view: self.state.view
       });
     };
+    AuthStore.streams.userStream.listen(function(payload) {
+      if (payload) {
+        self.setState({
+          user: payload.user,
+          username: payload.username
+        });
+      }
+    });
   },
   componentDidMount: function() {
     var self = this;
@@ -83,7 +94,10 @@ var App = React.createClass({
         view = <ResetPassword />;
         break;
       case views.DAY:
-        view = <Day params={params} />;
+        view = <Day
+          user={this.state.user}
+          username={this.state.username}
+          params={params} />;
         break;
       case views.PROFILE:
         view = 'profile';

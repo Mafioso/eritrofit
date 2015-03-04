@@ -2,9 +2,11 @@
 var flux = require('fluxstream');
 
 module.exports = flux.createActions([
-  'getDay',
-  'setDay',
-  'setFetchError',
+  'setupDayStreams',
+
+  'workoutsStream',
+  'commentsStream',
+
   'createWorkout',
   'createWorkoutSuccess'
 ]);

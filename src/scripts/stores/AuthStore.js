@@ -39,6 +39,9 @@ module.exports = flux.createStore({
   config: {
     errors: {
       action: AuthActions.signInError
+    },
+    userStream: {
+      action: AuthActions.userStream
     }
   }
 });

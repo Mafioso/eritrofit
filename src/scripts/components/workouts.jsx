@@ -10,47 +10,33 @@ var _ = require('lodash');
 module.exports = React.createClass({
   getInitialState: function() {
     return ({
-      showForm: false
-    });
-  },
-  componentDidMount: function() {
-    DayStore.streams.createWorkoutSuccess.listen(function(payload) {
-      console.log(payload, 'create workout success');
-    });
-  },
-  handleWorkoutSubmit: function(text) {
-    // var workouts = this.state.workouts;
-    // workouts.push(workout);
-    // this.setState({
-    //   workouts: workouts,
-    //   showForm: false
-    // });
-    DayActions.createWorkout({
-      text: text,
-      day: this.props.dayId
+
     });
   },
   render: function() {
-    var nextWorkoutIdx = 1;
-    var workouts = [];
-    var workoutItems;
-    console.log(this.props.dayData);
-    // if (this.props.dayData) {
-    //   workouts = _.values(this.props.dayData.workouts);
-    //   nextWorkoutIdx = workouts.length + 1;
-    // }
-    //
-    // _.map(workouts, function(workout) {
-    //   return
-    // });
-
+    var self = this;
+    var workoutIdx = 0;
+    var workouts = _.map(_.values(this.props.items), function(workout) {
+      workoutIdx += 1;
+      return (
+        <WorkoutsItem
+          key={workout.key}
+          index={workoutIdx}
+          author={workout.author}
+          timestamp={workout.timestamp}
+          username={workout.username}
+          text={workout.text}
+          day={self.props.day} />
+      );
+    });
     return(
       <div className='workouts-container'>
-        <Permit userId='userid' requiredStatus='sudo'>
+        <ul className='workouts'>
+          {workouts}
+        </ul>
+        <Permit user={this.props.user} status='sudo'>
           <WorkoutsForm
-            showForm={this.state.showForm}
-            idx={nextWorkoutIdx}
-            onWorkoutSubmit={this.handleWorkoutSubmit} />
+            day={this.props.day} />
         </Permit>
       </div>
     );

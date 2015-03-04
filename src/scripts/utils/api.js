@@ -41,32 +41,55 @@ module.exports = {
   },
   // GET CURRENT USERS'S ID
   getCurrentUserId: function() {
-    return ref.getAuth().uid;
+    if (ref.getAuth()) {
+      return ref.getAuth().uid;
+    }
+  },
+  getUserById: function(id) {
+    var _usersRef = ref.child('users');
+    return Bacon.fromBinder(function(sink) {
+      _usersRef.child(id).on('value', function(userSnapshot) {
+        sink(_.extend(userSnapshot.val(), {
+          user: id
+        }));
+      });
+    });
   },
   // GENERATES 32x32px USERPIC
   getBase64Userpic: function(text) {
-    var textSHA = new JsSHA(text, 'TEXT');
-    var hash = textSHA.getHash('SHA-1', 'HEX');
-    var data = new Identicon(hash, 32, 4/32).toString();
-    return 'data:image/png;base64,' + data;
+    if (text) {
+      var textSHA = new JsSHA(text, 'TEXT');
+      var hash = textSHA.getHash('SHA-1', 'HEX');
+      var data = new Identicon(hash, 32, 4/32).toString();
+      return 'data:image/png;base64,' + data;
+    }
   },
   // GENERATES 64x64px USERPIC
   getLargeBase64Userpic: function(text) {
-    var textSHA = new JsSHA(text, 'TEXT');
-    var hash = textSHA.getHash('SHA-1', 'HEX');
-    var data = new Identicon(hash, 48, 4/48).toString();
-    return 'data:image/png;base64,' + data;
+    if (text) {
+      var textSHA = new JsSHA(text, 'TEXT');
+      var hash = textSHA.getHash('SHA-1', 'HEX');
+      var data = new Identicon(hash, 48, 4/48).toString();
+      return 'data:image/png;base64,' + data;
+    }
   },
   // GET DAY'S WORKOUTS
-  getWorkoutStreamByDay: function(day) {
+  getWorkoutsStreamByDay: function(day) {
     var _workoutsRef = ref.child('workouts');
     var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
+    var _usersRef = ref.child('users');
     return Bacon.fromBinder(function(sink) {
       _dayWorkoutsRef.on('value', function(snapshot) {
         var workoutsSelection = _.values(snapshot.val());
         _.forEach(workoutsSelection, function(workoutId) {
           _workoutsRef.child(workoutId).on('value', function(workoutSnapshot) {
-            sink(_.extend(workoutSnapshot.val(), {key: workoutId}));
+            var workout = workoutSnapshot.val();
+            _usersRef.child(workout.author).on('value', function(profileSnapshot) {
+              sink(_.extend(workout, {
+                  key: workoutId,
+                  username: profileSnapshot.val().username
+                }));
+            });
           });
         });
       });
