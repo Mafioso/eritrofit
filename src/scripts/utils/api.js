@@ -9,6 +9,7 @@ var JsSHA = require('jssha');
 var Identicon = require('./identicon');
 
 module.exports = {
+  ref: new Firebase(firebaseUrl),
   // USER AUTHENTICATION
   tryAuth: function(email, password) {
     return Bacon.fromCallback(function(email, password, sink) {
@@ -73,45 +74,8 @@ module.exports = {
       return 'data:image/png;base64,' + data;
     }
   },
-  // GET DAY'S WORKOUTS
-  getWorkoutsStreamByDay: function(day) {
-    var _workoutsRef = ref.child('workouts');
-    var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
-    var _usersRef = ref.child('users');
-    return Bacon.fromBinder(function(sink) {
-      _dayWorkoutsRef.on('value', function(snapshot) {
-        var workoutsSelection = _.values(snapshot.val());
-        _.forEach(workoutsSelection, function(workoutId) {
-          _workoutsRef.child(workoutId).on('value', function(workoutSnapshot) {
-            var workout = workoutSnapshot.val();
-            _usersRef.child(workout.author).on('value', function(profileSnapshot) {
-              sink(_.extend(workout, {
-                  key: workoutId,
-                  username: profileSnapshot.val().username
-                }));
-            });
-          });
-        });
-      });
-    });
-    // var _dayWorkouts = ref.child('days/' + day + '/workouts');
-  },
-  // GET DAY DATA BY ID (id format: DDMMYY)
-  // getDayById: function(day) {
-  //   var _ref = ref.child('days/'+day);
-  //   var _workoutRef = ref.child('workouts');
-  //   return Bacon.fromBinder(function(sink) {
-  //     _ref.on('value', function(snapshot) {
-  //       var day = snapshot.val();
-  //       _ref
-  //
-  //       console.log(snapshot.val(), 'value updated');
-  //       sink(snapshot.val());
-  //     });
-  //   });
-  // },
   // APPEND WORKOUT TO A DAY
-  setWorkout: function(workout, day) {
+  createWorkout: function(workout, day) {
     var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
     var _workoutsRef = ref.child('workouts');
     return Bacon.fromCallback(function(workout, sink){
@@ -127,5 +91,55 @@ module.exports = {
       username = snapshot.val();
     });
     return username;
+  },
+  updateWorkout: function(config) {
+    if (config && config.key && config.text) {
+      var _workoutRef = ref.child('workouts').child(config.key);
+      return Bacon.fromCallback(function(config, sink) {
+        _workoutRef.transaction(function(currentData) {
+          var newData = currentData || {};
+          newData.text = config.text;
+          newData.editedTimestamp = config.editedTimestamp;
+          return newData;
+        }, function(error, committed) {
+          if (error) {
+            sink(error);
+          } else if (!committed) {
+            sink(_.extend(new Error(), {key: 'ABORTED_TRANSACTION'}));
+          } else {
+            sink('success');
+          }
+        });
+      }, config);
+    }
+  },
+  deleteWorkout: function(config) {
+    var _dayWorkoutsRef = ref.child('days').child(config.day).child('workouts');
+    var _workoutRef = ref.child('workouts').child(config.key);
+    return Bacon.fromCallback(function(sink) {
+      if (config && config.key && config.day) {
+        _dayWorkoutsRef.transaction(function(currentData) {
+          var newData = currentData;
+          var keyToRemove = _.findKey(newData, function(val) {
+            return val === config.key;
+          });
+          if (keyToRemove) {
+            delete newData[keyToRemove];
+          }
+          return newData;
+        }, function(error, committed) {
+          if (error) {
+            console.log('error', error);
+            sink(error);
+          } else if (!committed) {
+            console.log('aborted transaction');
+            sink(_.extend(new Error(), {key: 'ABORTED_TRANSACTION'}));
+          } else {
+            _workoutRef.off();
+            _workoutRef.remove();
+          }
+        });
+      }
+    }, config);
   }
 };

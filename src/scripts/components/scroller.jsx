@@ -1,9 +1,9 @@
 'use strict';
 
-var Icon = require('./icon.jsx');
+var Icon = require('./Icon.jsx');
 var moment = require('moment');
 
-module.exports = React.createClass({
+var Scroller = React.createClass({
   render: function() {
     return (
       <div className='scroller'>
@@ -29,3 +29,5 @@ module.exports = React.createClass({
     );
   }
 });
+
+module.exports = Scroller;

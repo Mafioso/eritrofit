@@ -1,6 +1,6 @@
 'use strict';
 
-var Icon = require('../components/icon.jsx');
+var Icon = require('../components/Icon.jsx');
 var AuthActions = require('../actions/AuthActions');
 var AuthStore = require('../stores/AuthStore');
 var views = require('../constants/views');

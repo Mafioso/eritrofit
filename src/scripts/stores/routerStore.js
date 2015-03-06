@@ -87,6 +87,7 @@ module.exports = flux.createStore({
         // ...
 
       } else {
+        AuthActions.userStream(null); // be sure to empty the user state
 
         // prompt login for pages, that are not LOGIN or PASSWORD_RESET
         if (_.indexOf([views.LOGIN, views.PASSWORD_RESET], newState.target_view) === -1) {

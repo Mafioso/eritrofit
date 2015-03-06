@@ -8,5 +8,11 @@ module.exports = flux.createActions([
   'commentsStream',
 
   'createWorkout',
-  'createWorkoutSuccess'
+  'createWorkoutSuccess',
+
+  'updateWorkout',
+  'updateWorkoutSuccess',
+
+  'deleteWorkout',
+  'deleteWorkoutSuccess'
 ]);

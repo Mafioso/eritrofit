@@ -1,10 +1,10 @@
 'use strict';
 
-var Icon = require('./icon.jsx');
+var Icon = require('./Icon.jsx');
 var moment = require('moment');
 var api = require('../utils/api');
 
-module.exports = React.createClass({
+var Nav = React.createClass({
   render: function() {
     var userpic = api.getBase64Userpic(this.props.user);
     var today = moment().format('DDMMYY');
@@ -42,3 +42,5 @@ module.exports = React.createClass({
     );
   }
 });
+
+module.exports = Nav;

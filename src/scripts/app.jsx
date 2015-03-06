@@ -48,9 +48,18 @@ var App = React.createClass({
     };
     AuthStore.streams.userStream.listen(function(payload) {
       if (payload) {
+        var currentUser = {
+          user: self.state.user,
+          username: self.state.username
+        };
+        if (!_.isEqual(currentUser, payload)) {
+          console.log('%cDIFFERENT!', 'font-weight:bold; color: red;');
+          self.setState(payload);
+        }
+      } else {
         self.setState({
-          user: payload.user,
-          username: payload.username
+          user: '',
+          username: ''
         });
       }
     });

@@ -4,14 +4,75 @@ var flux = require('fluxstream');
 var DayActions = require('../actions/DayActions');
 var api = require('../utils/api');
 var moment = require('moment');
-// var _ = require('lodash');
+var _ = require('lodash');
 
 module.exports = flux.createStore({
   init: function() {
+    var refs = [];
     DayActions.setupDayStreams.listen(function(payload) {
-      var workoutsStream = api.getWorkoutsStreamByDay(payload.day);
-      workoutsStream.onValue(function(payload) {
-        DayActions.workoutsStream(payload);
+      // release the callbacks!
+      _.forEach(refs, function(ref) {
+        ref.off();
+      });
+      refs = [];
+
+      if (payload) {
+        var workoutsRef = api.ref.child('days').child(payload.day).child('workouts');
+        refs.push(workoutsRef);
+
+        workoutsRef.on('child_removed', function(workoutsSnap) {
+          DayActions.workoutsStream({ action: 'REMOVE', key: workoutsSnap.val() });
+        });
+
+        workoutsRef.on('value', function(workoutsSnap) {
+          if (workoutsSnap.val()) {
+            var workoutIds = _.values(workoutsSnap.val());
+            var workoutRefs = _.map(workoutIds, function(workoutId) {
+              return api.ref.child('workouts').child(workoutId);
+            });
+
+            refs.concat(workoutRefs);
+
+            // LISTEN FOR CHANGES IN EVERY WORKOUT
+            _.forEach(workoutRefs, function(workoutRef) {
+              workoutRef.on('value', function(workoutSnap) {
+                var workout = workoutSnap.val();
+                if (workout) {
+                  var userId = workout.author;
+                  var userRef = api.ref.child('users').child(userId);
+
+                  refs.push(userRef);
+
+                  userRef.on('value', function(userSnap) {
+                    var profile = userSnap.val();
+
+                    var workoutPayload = _.extend(workout, {
+                      action: 'PUT',
+                      key: workoutRef.key(),
+                      username: profile.username
+                    });
+                    DayActions.workoutsStream(workoutPayload);
+                  });
+                }
+              });
+            });
+          }
+        });
+      }
+    });
+
+    DayActions.updateWorkout.listen(function(payload) {
+      var updateWorkoutStream = api.updateWorkout(payload);
+      updateWorkoutStream.onValue(function(payload) {
+        if (payload === 'success') {
+          DayActions.updateWorkoutSuccess(payload);
+        }
+      });
+    });
+    DayActions.deleteWorkout.listen(function(payload) {
+      var deleteWorkoutStream = api.deleteWorkout(payload);
+      deleteWorkoutStream.onValue(function(payload) {
+        DayActions.deleteWorkoutSuccess(payload);
       });
     });
     DayActions.createWorkout.listen(function(payload) {
@@ -21,32 +82,30 @@ module.exports = flux.createStore({
       // 2. author id
       // 3. text
       // 4. day
-      // var timestamp = moment().utc().format();
-      // var authorId = api.getCurrentUserId();
-      // if (timestamp && authorId && payload.text && payload.day) {
-      //   var setWorkout = api.setWorkout({
-      //     timestamp: timestamp,
-      //     author: authorId,
-      //     text: payload.text
-      //   }, payload.day);
-      //   setWorkout.onValue(function(payload) {
-      //     DayActions.createWorkoutSuccess(payload);
-      //   });
-      // }
+      if (payload.timestamp && payload.user && payload.text && payload.day) {
+        var createWorkout = api.createWorkout({
+          timestamp: payload.timestamp,
+          author: payload.user,
+          text: payload.text
+        }, payload.day);
+        createWorkout.onValue(function(payload) {
+          DayActions.createWorkoutSuccess(payload);
+        });
+      }
     });
   },
   config: {
-    // errors: {
-    //   action: DayActions.setFetchError
-    // },
-    // setDay: {
-    //   action: DayActions.setDay
-    // },
     workoutsStream: {
       action: DayActions.workoutsStream
     },
     createWorkoutSuccess: {
       action: DayActions.createWorkoutSuccess
+    },
+    updateWorkoutSuccess: {
+      action: DayActions.updateWorkoutSuccess
+    },
+    deleteWorkoutSuccess: {
+      action: DayActions.deleteWorkoutSuccess
     }
   }
 });

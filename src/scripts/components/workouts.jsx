@@ -7,7 +7,7 @@ var DayActions = require('../actions/DayActions');
 var DayStore = require('../stores/DayStore');
 var _ = require('lodash');
 
-module.exports = React.createClass({
+var Workouts = React.createClass({
   getInitialState: function() {
     return ({
 
@@ -20,10 +20,13 @@ module.exports = React.createClass({
       workoutIdx += 1;
       return (
         <WorkoutsItem
+          user={self.props.user}
           key={workout.key}
+          workoutId={workout.key}
           index={workoutIdx}
           author={workout.author}
           timestamp={workout.timestamp}
+          editedTimestamp={workout.editedTimestamp}
           username={workout.username}
           text={workout.text}
           day={self.props.day} />
@@ -36,9 +39,13 @@ module.exports = React.createClass({
         </ul>
         <Permit user={this.props.user} status='sudo'>
           <WorkoutsForm
+            user={self.props.user}
+            username={self.props.username}
             day={this.props.day} />
         </Permit>
       </div>
     );
   }
 });
+
+module.exports = Workouts;

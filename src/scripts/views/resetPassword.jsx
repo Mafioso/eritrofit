@@ -1,8 +1,8 @@
 'use strict';
 
-var Icon = require('../components/icon.jsx');
+var Icon = require('../components/Icon.jsx');
 
-module.exports = React.createClass({
+var ResetPassword = React.createClass({
   getInitialState: function() {
     return {
       error: {code: ''}
@@ -31,7 +31,7 @@ module.exports = React.createClass({
   },
   handleSubmit: function(event) {
     event.preventDefault();
-    
+
     this.setState({
       error: {
         code:'INVALID_USER'
@@ -73,3 +73,5 @@ module.exports = React.createClass({
     );
   }
 });
+
+module.exports = ResetPassword;

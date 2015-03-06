@@ -1,12 +1,12 @@
 'use strict';
 
-module.exports = React.createClass({
+var InputTextarea = React.createClass({
   handleChange: function(event) {
     this.props.onTextChange(event.target.value);
   },
   componentDidMount: function() {
     if (this.props.autoFocus) {
-      this.refs[this.props.name].getDOMNode().focus();
+      this.refs[this.props.name].getDOMNode().select();
     }
   },
   render: function() {
@@ -16,6 +16,7 @@ module.exports = React.createClass({
           {this.props.text + '\n'}
         </div>
         <textarea
+          defaultValue={this.props.text}
           ref={this.props.name}
           autoFocus={this.props.autoFocus}
           className='input-field'
@@ -25,3 +26,5 @@ module.exports = React.createClass({
     );
   }
 });
+
+module.exports = InputTextarea;

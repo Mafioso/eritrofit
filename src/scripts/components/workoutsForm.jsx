@@ -4,26 +4,30 @@ var api = require('../utils/api');
 var InputTextarea = require('./inputTextarea.jsx');
 var DayStore = require('../stores/DayStore');
 var DayActions = require('../actions/DayActions');
+var moment = require('moment');
 
-module.exports = React.createClass({
-  _userpic: api.getLargeBase64Userpic(api.getCurrentUserId()),
+var WorkoutsForm = React.createClass({
   getInitialState: function() {
     return ({
       error: '',
       submitting: false,
       showForm: false,
-      text: ''
+      text: '',
+      createWorkoutSuccessUnsub: {}
     });
   },
-  componentWillMount: function() {
+  componentDidMount: function() {
     var self = this;
-    DayStore.streams.createWorkoutSuccess.listen(function() {
-      self.setState({
-        submitting: false,
-        showForm: false,
-        text: ''
-      });
+    var createWorkoutSuccessUnsub = DayStore.streams.createWorkoutSuccess.listen(function() {
+      // if (self.isMounted()) {
+        self.setState({
+          submitting: false,
+          showForm: false,
+          text: ''
+        });
+      // }
     });
+    this.setState({createWorkoutSuccessUnsub: createWorkoutSuccessUnsub});
   },
   handleNewWorkoutTextUpdate: function(text) {
     this.setState({
@@ -42,8 +46,13 @@ module.exports = React.createClass({
     });
     DayActions.createWorkout({
       text: this.state.text,
-      day: this.props.day
+      day: this.props.day,
+      timestamp: moment().utc().format(),
+      user: this.props.user
     });
+  },
+  componentWillUnmount: function() {
+    this.state.createWorkoutSuccessUnsub();
   },
   render: function() {
     var form;
@@ -52,7 +61,7 @@ module.exports = React.createClass({
       toggleFormButtonText = 'Отмена';
       form = (<form onSubmit={this.handleFormSubmit} className='workouts-form'>
         <div className='workout-userpic figure-userpic'>
-          <img src={this._userpic} />
+          <img src={api.getLargeBase64Userpic(this.props.user)} />
         </div>
         <div className='workout'>
           <div className='workout-meta'>
@@ -90,3 +99,5 @@ module.exports = React.createClass({
     );
   }
 });
+
+module.exports = WorkoutsForm;

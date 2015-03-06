@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = React.createClass({
+var Permit = React.createClass({
   _render: true,
   // PROPS
   // userId
@@ -16,3 +16,5 @@ module.exports = React.createClass({
     return (children);
   }
 });
+
+module.exports = Permit;

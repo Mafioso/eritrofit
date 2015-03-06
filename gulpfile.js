@@ -20,6 +20,7 @@ gulp.task('clean', function(){
 // Styles
 gulp.task('styles', function() {
   return gulp.src('src/sass/**/*')
+    .pipe($.plumber({errorHandler: $.notify.onError("SASS Error: <%= error.message %>")}))
     .pipe($.rubySass({
       'sourcemap=none': true,
       style: 'expanded',
