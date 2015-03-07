@@ -3,9 +3,10 @@
 var WorkoutsForm = require('./workoutsForm.jsx');
 var WorkoutsItem = require('./workoutsItem.jsx');
 var Permit = require('./permit.jsx');
-var DayActions = require('../actions/DayActions');
-var DayStore = require('../stores/DayStore');
+// var DayActions = require('../actions/DayActions');
+// var DayStore = require('../stores/DayStore');
 var _ = require('lodash');
+var moment = require('moment');
 
 var Workouts = React.createClass({
   getInitialState: function() {
@@ -13,23 +14,24 @@ var Workouts = React.createClass({
 
     });
   },
+  handleShowWorkoutDetails: function(workout) {
+    this.props.onShowWorkoutDetails(workout);
+  },
   render: function() {
     var self = this;
-    var workoutIdx = 0;
-    var workouts = _.map(_.values(this.props.items), function(workout) {
-      workoutIdx += 1;
+    // sort workouts by addition date
+    var workoutBlobs = _.sortBy(_.values(this.props.items), function(blob) {
+      return moment(blob.timestamp);
+    });
+
+    var workouts = _.map(workoutBlobs, function(workout) {
       return (
         <WorkoutsItem
-          user={self.props.user}
           key={workout.key}
-          workoutId={workout.key}
-          index={workoutIdx}
-          author={workout.author}
-          timestamp={workout.timestamp}
-          editedTimestamp={workout.editedTimestamp}
-          username={workout.username}
-          text={workout.text}
-          day={self.props.day} />
+          onShowWorkoutDetails={self.handleShowWorkoutDetails}
+          day={self.props.day}
+          user={self.props.user}
+          workout={workout} />
       );
     });
     return(

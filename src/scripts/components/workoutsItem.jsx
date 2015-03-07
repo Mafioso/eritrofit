@@ -6,6 +6,7 @@ var Icon = require('./icon.jsx');
 var InputTextarea = require('./InputTextarea.jsx');
 var DayActions = require('../actions/DayActions');
 var DayStore = require('../stores/DayStore');
+var _ = require('lodash');
 
 var WorkoutsItem = React.createClass({
   // PROPS:
@@ -43,13 +44,18 @@ var WorkoutsItem = React.createClass({
   handleWorkoutResultSubmit: function() {
 
   },
+  handleShowWorkoutDetails: function() {
+    this.props.onShowWorkoutDetails(_.extend(this.props.workout, {
+      day: this.props.day
+    }));
+  },
   handleWorkoutDelete: function() {
     this.setState({
       removing: true
     });
     var config = {
       day: this.props.day,
-      key: this.props.workoutId
+      key: this.props.workout.key
     };
     DayActions.deleteWorkout(config);
   },
@@ -58,7 +64,7 @@ var WorkoutsItem = React.createClass({
     var config = {
       text: this.state.editingText,
       editedTimestamp: moment().utc().format(),
-      key: this.props.workoutId
+      key: this.props.workout.key
     };
     DayActions.updateWorkout(config);
     this.setState({
@@ -68,7 +74,7 @@ var WorkoutsItem = React.createClass({
   handleWorkoutEdit: function() {
     this.setState({
       showForm: !this.state.showForm,
-      editingText: !this.state.showForm ? this.props.text : ''
+      editingText: !this.state.showForm ? this.props.workout.text : ''
     });
   },
   handleEditingWorkoutTextUpdate: function(text) {
@@ -80,15 +86,16 @@ var WorkoutsItem = React.createClass({
     this.state.updateWorkoutSuccessUnsub();
   },
   render: function() {
-    var userpic = api.getLargeBase64Userpic(this.props.author);
+    var userpic = api.getLargeBase64Userpic(this.props.workout.author);
     var dayTime = new moment(this.props.day, 'DDMMYY');
     var timestampFormat = 'H:mm';
-    if (!dayTime.isSame(moment(this.props.timestamp), 'day')) {
+    if (!dayTime.isSame(moment(this.props.workout.timestamp), 'day')) {
       timestampFormat = 'D MMMM H:mm';
     }
-    var timestamp = moment(this.props.timestamp).format(timestampFormat);
+    var timestamp = moment(this.props.workout.timestamp).format(timestampFormat);
+
     var editButton;
-    if (this.props.author === this.props.user) {
+    if (this.props.workout.author === this.props.user) {
       editButton = (
         <button
           onClick={this.handleWorkoutEdit}
@@ -98,11 +105,11 @@ var WorkoutsItem = React.createClass({
         </button>
       );
     }
-    var edited = '';
-    if (this.props.editedTimestamp) {
-      edited = (
-        <span title={moment(this.props.editedTimestamp).format('D MMMM H:mm')}>
-          отредактировано
+    if (this.props.workout.editedTimestamp) {
+      timestamp += '*';
+      timestamp = (
+        <span title={'Oтредактировано ' + moment(this.props.workout.editedTimestamp).format('D MMMM в H:mm')}>
+          {timestamp}
         </span>
       );
     }
@@ -115,7 +122,7 @@ var WorkoutsItem = React.createClass({
           <form onSubmit={this.handleWorkoutUpdate} className='workout'>
             <div className='workout-meta'>
               <div className='workout-meta-body'>
-                <strong className='workout-meta-user'>{this.props.username}</strong>, { timestamp } {edited ? ',' : ''} {edited}
+                <strong className='workout-meta-user'>{this.props.workout.username}</strong>, { timestamp }
               </div>
               <div className='workout-meta-controls'>
                 <button
@@ -126,10 +133,9 @@ var WorkoutsItem = React.createClass({
                 </button>
               </div>
             </div>
-            <div className='workout-heading'>Комплекс {this.props.index}.</div>
             <div className='workout-body'>
               <InputTextarea
-                name={'workout_text_'+this.props.workoutId}
+                name={'workout_text_'+this.props.workout.key}
                 autoFocus={true}
                 text={this.state.editingText}
                 onTextChange={this.handleEditingWorkoutTextUpdate}
@@ -163,19 +169,28 @@ var WorkoutsItem = React.createClass({
           <div className='workout'>
             <div className='workout-meta'>
               <div className='workout-meta-body'>
-                <strong className='workout-meta-user'>{this.props.username}</strong>, { timestamp } {edited ? ',' : ''} {edited}
+                <strong className='workout-meta-user'>{this.props.workout.username}</strong>, {timestamp}
               </div>
               <div className='workout-meta-controls'>
                 {editButton}
+                <button onClick={this.handleShowWorkoutDetails} className='workout-meta-controls-btn' type='button'>
+                  <Icon name='chat' />
+                  0
+                </button>
               </div>
             </div>
-            <div className='workout-heading'>Комплекс {this.props.index}.</div>
             <div className='workout-body'>
-              {this.props.text}
+              {this.props.workout.text}
             </div>
             <div className='workout-footer'>
-              <span className='workout-footer-item'>0 (загруженные результаты)</span>
-              <button onClick={this.handleWorkoutResultSubmit} className='workout-submit' type='button'>Загрузить результат</button>
+              <button onClick={this.handleWorkoutResultSubmit} className='workout-submit' type='button'>
+                <span className='workout-submit-label'>
+                  Загрузить результат
+                </span>
+                <span className='workout-submit-counter'>
+                  0
+                </span>
+              </button>
             </div>
           </div>
         </li>

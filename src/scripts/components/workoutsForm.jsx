@@ -2,6 +2,7 @@
 
 var api = require('../utils/api');
 var InputTextarea = require('./inputTextarea.jsx');
+var Icon = require('./Icon.jsx');
 var DayStore = require('../stores/DayStore');
 var DayActions = require('../actions/DayActions');
 var moment = require('moment');
@@ -56,9 +57,9 @@ var WorkoutsForm = React.createClass({
   },
   render: function() {
     var form;
-    var toggleFormButtonText = '+ Добавить комплекс';
+    var toggleFormButtonBody = <span><Icon name='add' /> Добавить комплекс </span>;
     if (this.state.showForm) {
-      toggleFormButtonText = 'Отмена';
+      toggleFormButtonBody = 'Отмена';
       form = (<form onSubmit={this.handleFormSubmit} className='workouts-form'>
         <div className='workout-userpic figure-userpic'>
           <img src={api.getLargeBase64Userpic(this.props.user)} />
@@ -69,7 +70,6 @@ var WorkoutsForm = React.createClass({
               {this.props.username}
             </strong>
           </div>
-          <div className='workout-heading'>Новый комплекс.</div>
           <div className='workout-body'>
             <InputTextarea
               name='workout_text'
@@ -93,7 +93,7 @@ var WorkoutsForm = React.createClass({
       <div>
         {form}
         <button onClick={this.toggleForm} className='workout-add' type='button' >
-          {toggleFormButtonText}
+          {toggleFormButtonBody}
         </button>
       </div>
     );

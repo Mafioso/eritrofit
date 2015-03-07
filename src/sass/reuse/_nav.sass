@@ -1,6 +1,7 @@
 .nav
   width: 100%
   position: relative
+  flex: 1
   z-index: 1
 
 .nav-list,
@@ -30,7 +31,6 @@
 
   &--logo
     position: relative
-    float: left
     color: $color-primary
     z-index: 2
 
@@ -64,10 +64,16 @@
 
 .nav-list-item--extended
   height: 3rem
-  border-left: 2px solid $color-neutral
+  border-left: 1px solid $color-neutral
   &:hover
     background-color: $color-primary
     .nav-list-extra
       display: block
     .nav-link--user
       color: $color-white
+
+@media (max-width: $mq-ipad)
+  .nav-link--logo .icon--logo
+    margin-top: 1rem
+    height: 1rem
+    width: 5rem

@@ -20,6 +20,11 @@
   background-color: $color-white
   box-shadow: 0 -2px 4px 0 rgba($color-primary, .8)
 
+.workoutDetails-error
+  margin: auto
+  font-size: $size-large
+  color: $color-secondary
+
 .workoutDetails-close
   position: absolute
   top: 1rem
@@ -32,7 +37,7 @@
   border-top-left-radius: $radius-default
   border-bottom-left-radius: $radius-default
   &:hover
-    background-color: $color-secondary
+    background-color: $color-awesome
     color: $color-white
   .icon
     width: 1.5rem
@@ -50,23 +55,23 @@
 
 .workoutDetails-container
   &.workoutDetailsTransition-enter
-    animation: workoutDetails-slide-in 150ms ease-in-out
+    animation: workoutDetails-slide-in 100ms ease-in-out
   &.workoutDetailsTransition-enter.workoutDetailsTransition-enter-active
     transform: translate3d(0,0,0)
   &.workoutDetailsTransition-leave
-    animation: workoutDetails-slide-out 150ms ease-in-out
+    animation: workoutDetails-slide-out 100ms ease-in-out
   &.workoutDetailsTransition-leave.workoutDetailsTransition-leave-active
     transform: translate3d(100%, 0, 0)
 
 .workoutDetails-backdrop
   &.workoutDetailsBackdropTransition-enter
     opacity: 0
-    animation: modal-backdrop-appear 300ms ease-in-out
+    animation: modal-backdrop-appear 150ms ease-in-out
   &.workoutDetailsBackdropTransition-enter.workoutDetailsBackdropTransition-enter-active
     opacity: 1
   &.workoutDetailsBackdropTransition-leave
     opacity: 1
-    animation: modal-backdrop-disappear 300ms ease-in-out
+    animation: modal-backdrop-disappear 150ms ease-in-out
   &.workoutDetailsBackdropTransition-leave.workoutDetailsBackdropTransition-leave-active
     opacity: 0
 

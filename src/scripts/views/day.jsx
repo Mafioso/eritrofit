@@ -9,12 +9,16 @@ var WorkoutDetails = require('../components/WorkoutDetails.jsx');
 var TimeoutTransitionGroup = require('../components/TimeoutTransitionGroup.jsx');
 var DayActions = require('../actions/DayActions');
 var DayStore = require('../stores/DayStore');
+var moment = require('moment');
+var _ = require('lodash');
 
 var Day = React.createClass({
   getInitialState: function() {
     return({
       workouts: {},
-      showWorkoutDetails: true,
+      selectedWorkout: {},
+      showWorkoutDetails: false,
+      selectedWorkoutExists: true,
       unsubscribe: {}
     });
   },
@@ -22,17 +26,31 @@ var Day = React.createClass({
     // CREATE A LISTENER FOR A NEW DAY DATA
     var self = this;
     var unsubscribe = DayStore.streams.workoutsStream.onValue(function(payload) {
+      // every time workout changes we decide whether to set selectedWorkoutExists to true or not
       var workouts;
       if (self.isMounted() && payload && payload.action) {
         switch (payload.action) {
           case 'REMOVE':
             workouts = self.state.workouts;
             delete workouts[payload.key];
-            self.setState({ workouts: workouts });
+            var selectedWorkoutExists = self.state.selectedWorkoutExists;
+            if (self.state.selectedWorkout.key === payload.key) {
+              selectedWorkoutExists = false;
+            }
+            self.setState({
+              workouts: workouts,
+              selectedWorkoutExists: selectedWorkoutExists
+            });
             break;
           case 'PUT':
             workouts = self.state.workouts;
             workouts[payload.key] = payload;
+            var selectedWorkout = {};
+            if (self.state.selectedWorkout.key === payload.key) {
+              // update workoutDetails prop
+              selectedWorkout = _.extend(payload, {day: self.props.params.day});
+              self.setState({ selectedWorkout: selectedWorkout });
+            }
             self.setState({workouts: workouts});
             break;
           default:
@@ -59,16 +77,14 @@ var Day = React.createClass({
       showWorkoutDetails: false
     });
   },
+  handleShowWorkoutDetails: function(workout) {
+    this.setState({ selectedWorkout: workout, showWorkoutDetails: true, selectedWorkoutExists: true });
+  },
   render: function() {
-    var cs = React.addons.classSet;
-    var modalClasses = cs({
-      'modal': true,
-      'modal--open': true
-    });
     // don't mount workout details, if showWorkoutDetails is false
     var workoutDetailsBackdrop;
     var workoutDetails;
-    if (this.state.showWorkoutDetails) {
+    if (this.state.showWorkoutDetails && this.state.selectedWorkout) {
       workoutDetailsBackdrop = (
         <div
           key='modal-backrop'
@@ -77,8 +93,10 @@ var Day = React.createClass({
       );
       workoutDetails = (
         <WorkoutDetails
-          key='somekey'
-          handleModalClose={this.hideWorkoutDetails} />
+          key={this.state.selectedWorkout.key}
+          workout={this.state.selectedWorkout}
+          handleModalClose={this.hideWorkoutDetails}
+          selectedWorkoutExists={this.state.selectedWorkoutExists} />
       );
     }
     return (
@@ -91,15 +109,16 @@ var Day = React.createClass({
         <Scroller
           day={this.props.params.day} />
         <Workouts
+          onShowWorkoutDetails={this.handleShowWorkoutDetails}
           user={this.props.user}
           username={this.props.username}
           items={this.state.workouts}
           day={this.props.params.day} />
         <Portal>
-          <TimeoutTransitionGroup enterTimeout={300} leaveTimeout={300} component='div' transitionName='workoutDetailsBackdropTransition'>
+          <TimeoutTransitionGroup enterTimeout={150} leaveTimeout={150} component='div' transitionName='workoutDetailsBackdropTransition'>
             {workoutDetailsBackdrop}
           </TimeoutTransitionGroup>
-          <TimeoutTransitionGroup enterTimeout={150} leaveTimeout={150} component='div' transitionName='workoutDetailsTransition'>
+          <TimeoutTransitionGroup enterTimeout={100} leaveTimeout={100} component='div' transitionName='workoutDetailsTransition'>
             {workoutDetails}
           </TimeoutTransitionGroup>
         </Portal>

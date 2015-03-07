@@ -50457,7 +50457,7 @@ var Nav = React.createClass({displayName: "Nav",
             React.createElement("li", {className: "nav-list-item"}, 
               React.createElement("a", {href: todayUrl, className: "nav-link nav-link--active"}, "Тренировки")
             ), React.createElement("li", {className: "nav-list-item nav-list-item--extended"}, 
-              React.createElement("a", {href: "/#/", className: "nav-link nav-link--user"}, 
+              React.createElement("span", {className: "nav-link nav-link--user"}, 
                 React.createElement("span", {className: "figure-userpic figure-userpic--nav"}, 
                   React.createElement("img", {src: userpic, alt: this.props.username})
                 ), 
@@ -50835,12 +50835,51 @@ module.exports = WeekScroller;
 'use strict';
 
 var Icon = require('./Icon.jsx');
+var api = require('../utils/api');
+var moment = require('moment');
 
 module.exports = React.createClass({displayName: "exports",
   closeModal: function(event) {
     this.props.handleModalClose(event);
   },
+  componentWillMount: function() {
+    // add class to body
+    document.body.className += ' body--stopScroll';
+  },
+  componentWillUnmount: function() {
+    // remove class from body
+    document.body.className = document.body.className.replace(/\bbody--stopScroll\b/, '');
+  },
   render: function() {
+    var userpic = api.getLargeBase64Userpic(this.props.workout.author);
+    var dayTime = new moment(this.props.workout.day, 'DDMMYY');
+    var timestampFormat = 'H:mm';
+    if (!dayTime.isSame(moment(this.props.workout.timestamp), 'day')) {
+      timestampFormat = 'D MMMM H:mm';
+    }
+    var timestamp = moment(this.props.workout.timestamp).format(timestampFormat);
+    if (this.props.workout.editedTimestamp) {
+      timestamp += '*';
+      timestamp = (
+        React.createElement("span", {title: 'Oтредактировано ' + moment(this.props.workout.editedTimestamp).format('D MMMM в H:mm')}, 
+          timestamp
+        )
+      );
+    }
+    if (!this.props.selectedWorkoutExists) {
+      return (
+        React.createElement("div", {className: "modal-body workoutDetails-container"}, 
+          React.createElement("button", {onClick: this.closeModal, className: "workoutDetails-close", type: "button"}, 
+            React.createElement(Icon, {name: "x"})
+          ), 
+          React.createElement("div", {className: "workoutDetails"}, 
+            React.createElement("div", {className: "workoutDetails-error"}, 
+              "Этот комплекс был удален."
+            )
+          )
+        )
+      );
+    }
     return (
       React.createElement("div", {className: "modal-body workoutDetails-container"}, 
         React.createElement("button", {onClick: this.closeModal, className: "workoutDetails-close", type: "button"}, 
@@ -50849,25 +50888,33 @@ module.exports = React.createClass({displayName: "exports",
         React.createElement("div", {className: "workoutDetails"}, 
           React.createElement("div", {className: "workoutDetails-header"}, 
             React.createElement("div", {className: "workout-userpic figure-userpic"}, 
-              React.createElement("img", {src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAADAFBMVEXy8PH/AGcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABge+eEAAABAHRSTlP//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKmfXxgAACTtJREFUeNoBMAnP9gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAAAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAAAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAAAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAABAQEBAQEBAQEBAAAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAQEBAQEBAQEBAQAAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEAAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAABAQEBAQEBAQEBAAAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAQEBAQEBAQEBAQAAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEAAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAABAQEBAQEBAQEBAAAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAQEBAQEBAQEBAQAAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEAAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAABAQEBAQEBAQEBAAAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAQEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQEBAQEBAQEBAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAQEBAQEBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAQEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQEBAQEBAQEBAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAQEBAQEBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAQEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQEBAQEBAQEBAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAQEBAQEBAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKQbBE3ZqY8zAAAAAElFTkSuQmCC'})
+              React.createElement("img", {src: userpic})
             ), 
             React.createElement("div", {className: "workout"}, 
               React.createElement("div", {className: "workout-meta"}, 
                 React.createElement("div", {className: "workout-meta-body"}, 
-                  React.createElement("strong", {className: "workout-meta-user"}, "Username")
+                  React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), ", ", timestamp
                 )
               ), 
-              React.createElement("div", {className: "workout-heading"}, "Комплекс 1."), 
               React.createElement("div", {className: "workout-body"}, 
-                "Описание комплекса"
-              ), 
-              React.createElement("div", {className: "workout-footer"}, 
-                React.createElement("span", {className: "workout-footer-item"}, "0 (загруженные результаты)")
+                this.props.workout.text
               )
             )
           ), 
           React.createElement("div", {className: "workoutDetails-body"}, 
-            "Сообщения и результаты"
+            React.createElement("div", {className: "workoutDetails-comment"}, 
+              React.createElement("div", {className: "workoutDetails-comment-userpic figure-userpic"}, 
+                React.createElement("img", {src: userpic})
+              ), 
+              React.createElement("div", {className: "workoutDetails-comment-body"}, 
+                React.createElement("div", {className: "workoutDetails-comment-meta"}, 
+                  React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), ", ", timestamp
+                ), 
+                React.createElement("div", {className: "workoutDetails-comment-entry"}, 
+                  "rtalalalalala alalalala"
+                )
+              )
+            )
           ), 
           React.createElement("div", {className: "workoutDetails-footer"}, 
             "Ввод комментов или аплоад результатов"
@@ -50878,15 +50925,16 @@ module.exports = React.createClass({displayName: "exports",
   }
 });
 
-},{"./Icon.jsx":209}],217:[function(require,module,exports){
+},{"../utils/api":229,"./Icon.jsx":209,"moment":33}],217:[function(require,module,exports){
 'use strict';
 
 var WorkoutsForm = require('./workoutsForm.jsx');
 var WorkoutsItem = require('./workoutsItem.jsx');
 var Permit = require('./permit.jsx');
-var DayActions = require('../actions/DayActions');
-var DayStore = require('../stores/DayStore');
+// var DayActions = require('../actions/DayActions');
+// var DayStore = require('../stores/DayStore');
 var _ = require('lodash');
+var moment = require('moment');
 
 var Workouts = React.createClass({displayName: "Workouts",
   getInitialState: function() {
@@ -50894,23 +50942,24 @@ var Workouts = React.createClass({displayName: "Workouts",
 
     });
   },
+  handleShowWorkoutDetails: function(workout) {
+    this.props.onShowWorkoutDetails(workout);
+  },
   render: function() {
     var self = this;
-    var workoutIdx = 0;
-    var workouts = _.map(_.values(this.props.items), function(workout) {
-      workoutIdx += 1;
+    // sort workouts by addition date
+    var workoutBlobs = _.sortBy(_.values(this.props.items), function(blob) {
+      return moment(blob.timestamp);
+    });
+
+    var workouts = _.map(workoutBlobs, function(workout) {
       return (
         React.createElement(WorkoutsItem, {
-          user: self.props.user, 
           key: workout.key, 
-          workoutId: workout.key, 
-          index: workoutIdx, 
-          author: workout.author, 
-          timestamp: workout.timestamp, 
-          editedTimestamp: workout.editedTimestamp, 
-          username: workout.username, 
-          text: workout.text, 
-          day: self.props.day})
+          onShowWorkoutDetails: self.handleShowWorkoutDetails, 
+          day: self.props.day, 
+          user: self.props.user, 
+          workout: workout})
       );
     });
     return(
@@ -50931,7 +50980,7 @@ var Workouts = React.createClass({displayName: "Workouts",
 
 module.exports = Workouts;
 
-},{"../actions/DayActions":207,"../stores/DayStore":227,"./permit.jsx":220,"./workoutsForm.jsx":221,"./workoutsItem.jsx":222,"lodash":31}],218:[function(require,module,exports){
+},{"./permit.jsx":220,"./workoutsForm.jsx":221,"./workoutsItem.jsx":222,"lodash":31,"moment":33}],218:[function(require,module,exports){
 module.exports=require(209)
 },{}],219:[function(require,module,exports){
 module.exports=require(210)
@@ -50962,6 +51011,7 @@ module.exports = Permit;
 
 var api = require('../utils/api');
 var InputTextarea = require('./inputTextarea.jsx');
+var Icon = require('./Icon.jsx');
 var DayStore = require('../stores/DayStore');
 var DayActions = require('../actions/DayActions');
 var moment = require('moment');
@@ -51016,9 +51066,9 @@ var WorkoutsForm = React.createClass({displayName: "WorkoutsForm",
   },
   render: function() {
     var form;
-    var toggleFormButtonText = '+ Добавить комплекс';
+    var toggleFormButtonBody = React.createElement("span", null, React.createElement(Icon, {name: "add"}), " Добавить комплекс ");
     if (this.state.showForm) {
-      toggleFormButtonText = 'Отмена';
+      toggleFormButtonBody = 'Отмена';
       form = (React.createElement("form", {onSubmit: this.handleFormSubmit, className: "workouts-form"}, 
         React.createElement("div", {className: "workout-userpic figure-userpic"}, 
           React.createElement("img", {src: api.getLargeBase64Userpic(this.props.user)})
@@ -51029,7 +51079,6 @@ var WorkoutsForm = React.createClass({displayName: "WorkoutsForm",
               this.props.username
             )
           ), 
-          React.createElement("div", {className: "workout-heading"}, "Новый комплекс."), 
           React.createElement("div", {className: "workout-body"}, 
             React.createElement(InputTextarea, {
               name: "workout_text", 
@@ -51053,7 +51102,7 @@ var WorkoutsForm = React.createClass({displayName: "WorkoutsForm",
       React.createElement("div", null, 
         form, 
         React.createElement("button", {onClick: this.toggleForm, className: "workout-add", type: "button"}, 
-          toggleFormButtonText
+          toggleFormButtonBody
         )
       )
     );
@@ -51062,7 +51111,7 @@ var WorkoutsForm = React.createClass({displayName: "WorkoutsForm",
 
 module.exports = WorkoutsForm;
 
-},{"../actions/DayActions":207,"../stores/DayStore":227,"../utils/api":229,"./inputTextarea.jsx":219,"moment":33}],222:[function(require,module,exports){
+},{"../actions/DayActions":207,"../stores/DayStore":227,"../utils/api":229,"./Icon.jsx":209,"./inputTextarea.jsx":219,"moment":33}],222:[function(require,module,exports){
 'use strict';
 
 var api = require('../utils/api');
@@ -51071,6 +51120,7 @@ var Icon = require('./icon.jsx');
 var InputTextarea = require('./InputTextarea.jsx');
 var DayActions = require('../actions/DayActions');
 var DayStore = require('../stores/DayStore');
+var _ = require('lodash');
 
 var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
   // PROPS:
@@ -51108,13 +51158,18 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
   handleWorkoutResultSubmit: function() {
 
   },
+  handleShowWorkoutDetails: function() {
+    this.props.onShowWorkoutDetails(_.extend(this.props.workout, {
+      day: this.props.day
+    }));
+  },
   handleWorkoutDelete: function() {
     this.setState({
       removing: true
     });
     var config = {
       day: this.props.day,
-      key: this.props.workoutId
+      key: this.props.workout.key
     };
     DayActions.deleteWorkout(config);
   },
@@ -51123,7 +51178,7 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
     var config = {
       text: this.state.editingText,
       editedTimestamp: moment().utc().format(),
-      key: this.props.workoutId
+      key: this.props.workout.key
     };
     DayActions.updateWorkout(config);
     this.setState({
@@ -51133,7 +51188,7 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
   handleWorkoutEdit: function() {
     this.setState({
       showForm: !this.state.showForm,
-      editingText: !this.state.showForm ? this.props.text : ''
+      editingText: !this.state.showForm ? this.props.workout.text : ''
     });
   },
   handleEditingWorkoutTextUpdate: function(text) {
@@ -51145,15 +51200,16 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
     this.state.updateWorkoutSuccessUnsub();
   },
   render: function() {
-    var userpic = api.getLargeBase64Userpic(this.props.author);
+    var userpic = api.getLargeBase64Userpic(this.props.workout.author);
     var dayTime = new moment(this.props.day, 'DDMMYY');
     var timestampFormat = 'H:mm';
-    if (!dayTime.isSame(moment(this.props.timestamp), 'day')) {
+    if (!dayTime.isSame(moment(this.props.workout.timestamp), 'day')) {
       timestampFormat = 'D MMMM H:mm';
     }
-    var timestamp = moment(this.props.timestamp).format(timestampFormat);
+    var timestamp = moment(this.props.workout.timestamp).format(timestampFormat);
+
     var editButton;
-    if (this.props.author === this.props.user) {
+    if (this.props.workout.author === this.props.user) {
       editButton = (
         React.createElement("button", {
           onClick: this.handleWorkoutEdit, 
@@ -51163,11 +51219,11 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
         )
       );
     }
-    var edited = '';
-    if (this.props.editedTimestamp) {
-      edited = (
-        React.createElement("span", {title: moment(this.props.editedTimestamp).format('D MMMM H:mm')}, 
-          "отредактировано"
+    if (this.props.workout.editedTimestamp) {
+      timestamp += '*';
+      timestamp = (
+        React.createElement("span", {title: 'Oтредактировано ' + moment(this.props.workout.editedTimestamp).format('D MMMM в H:mm')}, 
+          timestamp
         )
       );
     }
@@ -51180,7 +51236,7 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
           React.createElement("form", {onSubmit: this.handleWorkoutUpdate, className: "workout"}, 
             React.createElement("div", {className: "workout-meta"}, 
               React.createElement("div", {className: "workout-meta-body"}, 
-                React.createElement("strong", {className: "workout-meta-user"}, this.props.username), ", ", timestamp, " ", edited ? ',' : '', " ", edited
+                React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), ", ", timestamp 
               ), 
               React.createElement("div", {className: "workout-meta-controls"}, 
                 React.createElement("button", {
@@ -51191,10 +51247,9 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
                 )
               )
             ), 
-            React.createElement("div", {className: "workout-heading"}, "Комплекс ", this.props.index, "."), 
             React.createElement("div", {className: "workout-body"}, 
               React.createElement(InputTextarea, {
-                name: 'workout_text_'+this.props.workoutId, 
+                name: 'workout_text_'+this.props.workout.key, 
                 autoFocus: true, 
                 text: this.state.editingText, 
                 onTextChange: this.handleEditingWorkoutTextUpdate, 
@@ -51228,19 +51283,28 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
           React.createElement("div", {className: "workout"}, 
             React.createElement("div", {className: "workout-meta"}, 
               React.createElement("div", {className: "workout-meta-body"}, 
-                React.createElement("strong", {className: "workout-meta-user"}, this.props.username), ", ", timestamp, " ", edited ? ',' : '', " ", edited
+                React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), ", ", timestamp
               ), 
               React.createElement("div", {className: "workout-meta-controls"}, 
-                editButton
+                editButton, 
+                React.createElement("button", {onClick: this.handleShowWorkoutDetails, className: "workout-meta-controls-btn", type: "button"}, 
+                  React.createElement(Icon, {name: "chat"}), 
+                  "0"
+                )
               )
             ), 
-            React.createElement("div", {className: "workout-heading"}, "Комплекс ", this.props.index, "."), 
             React.createElement("div", {className: "workout-body"}, 
-              this.props.text
+              this.props.workout.text
             ), 
             React.createElement("div", {className: "workout-footer"}, 
-              React.createElement("span", {className: "workout-footer-item"}, "0 (загруженные результаты)"), 
-              React.createElement("button", {onClick: this.handleWorkoutResultSubmit, className: "workout-submit", type: "button"}, "Загрузить результат")
+              React.createElement("button", {onClick: this.handleWorkoutResultSubmit, className: "workout-submit", type: "button"}, 
+                React.createElement("span", {className: "workout-submit-label"}, 
+                  "Загрузить результат"
+                ), 
+                React.createElement("span", {className: "workout-submit-counter"}, 
+                  "0"
+                )
+              )
             )
           )
         )
@@ -51251,7 +51315,7 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
 
 module.exports = WorkoutsItem;
 
-},{"../actions/DayActions":207,"../stores/DayStore":227,"../utils/api":229,"./InputTextarea.jsx":210,"./icon.jsx":218,"moment":33}],223:[function(require,module,exports){
+},{"../actions/DayActions":207,"../stores/DayStore":227,"../utils/api":229,"./InputTextarea.jsx":210,"./icon.jsx":218,"lodash":31,"moment":33}],223:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -51968,12 +52032,16 @@ var WorkoutDetails = require('../components/WorkoutDetails.jsx');
 var TimeoutTransitionGroup = require('../components/TimeoutTransitionGroup.jsx');
 var DayActions = require('../actions/DayActions');
 var DayStore = require('../stores/DayStore');
+var moment = require('moment');
+var _ = require('lodash');
 
 var Day = React.createClass({displayName: "Day",
   getInitialState: function() {
     return({
       workouts: {},
-      showWorkoutDetails: true,
+      selectedWorkout: {},
+      showWorkoutDetails: false,
+      selectedWorkoutExists: true,
       unsubscribe: {}
     });
   },
@@ -51981,17 +52049,31 @@ var Day = React.createClass({displayName: "Day",
     // CREATE A LISTENER FOR A NEW DAY DATA
     var self = this;
     var unsubscribe = DayStore.streams.workoutsStream.onValue(function(payload) {
+      // every time workout changes we decide whether to set selectedWorkoutExists to true or not
       var workouts;
       if (self.isMounted() && payload && payload.action) {
         switch (payload.action) {
           case 'REMOVE':
             workouts = self.state.workouts;
             delete workouts[payload.key];
-            self.setState({ workouts: workouts });
+            var selectedWorkoutExists = self.state.selectedWorkoutExists;
+            if (self.state.selectedWorkout.key === payload.key) {
+              selectedWorkoutExists = false;
+            }
+            self.setState({
+              workouts: workouts,
+              selectedWorkoutExists: selectedWorkoutExists
+            });
             break;
           case 'PUT':
             workouts = self.state.workouts;
             workouts[payload.key] = payload;
+            var selectedWorkout = {};
+            if (self.state.selectedWorkout.key === payload.key) {
+              // update workoutDetails prop
+              selectedWorkout = _.extend(payload, {day: self.props.params.day});
+              self.setState({ selectedWorkout: selectedWorkout });
+            }
             self.setState({workouts: workouts});
             break;
           default:
@@ -52018,16 +52100,14 @@ var Day = React.createClass({displayName: "Day",
       showWorkoutDetails: false
     });
   },
+  handleShowWorkoutDetails: function(workout) {
+    this.setState({ selectedWorkout: workout, showWorkoutDetails: true, selectedWorkoutExists: true });
+  },
   render: function() {
-    var cs = React.addons.classSet;
-    var modalClasses = cs({
-      'modal': true,
-      'modal--open': true
-    });
     // don't mount workout details, if showWorkoutDetails is false
     var workoutDetailsBackdrop;
     var workoutDetails;
-    if (this.state.showWorkoutDetails) {
+    if (this.state.showWorkoutDetails && this.state.selectedWorkout) {
       workoutDetailsBackdrop = (
         React.createElement("div", {
           key: "modal-backrop", 
@@ -52036,8 +52116,10 @@ var Day = React.createClass({displayName: "Day",
       );
       workoutDetails = (
         React.createElement(WorkoutDetails, {
-          key: "somekey", 
-          handleModalClose: this.hideWorkoutDetails})
+          key: this.state.selectedWorkout.key, 
+          workout: this.state.selectedWorkout, 
+          handleModalClose: this.hideWorkoutDetails, 
+          selectedWorkoutExists: this.state.selectedWorkoutExists})
       );
     }
     return (
@@ -52050,15 +52132,16 @@ var Day = React.createClass({displayName: "Day",
         React.createElement(Scroller, {
           day: this.props.params.day}), 
         React.createElement(Workouts, {
+          onShowWorkoutDetails: this.handleShowWorkoutDetails, 
           user: this.props.user, 
           username: this.props.username, 
           items: this.state.workouts, 
           day: this.props.params.day}), 
         React.createElement(Portal, null, 
-          React.createElement(TimeoutTransitionGroup, {enterTimeout: 300, leaveTimeout: 300, component: "div", transitionName: "workoutDetailsBackdropTransition"}, 
+          React.createElement(TimeoutTransitionGroup, {enterTimeout: 150, leaveTimeout: 150, component: "div", transitionName: "workoutDetailsBackdropTransition"}, 
             workoutDetailsBackdrop
           ), 
-          React.createElement(TimeoutTransitionGroup, {enterTimeout: 150, leaveTimeout: 150, component: "div", transitionName: "workoutDetailsTransition"}, 
+          React.createElement(TimeoutTransitionGroup, {enterTimeout: 100, leaveTimeout: 100, component: "div", transitionName: "workoutDetailsTransition"}, 
             workoutDetails
           )
         )
@@ -52069,7 +52152,7 @@ var Day = React.createClass({displayName: "Day",
 
 module.exports = Day;
 
-},{"../actions/DayActions":207,"../components/Nav.jsx":211,"../components/Portal.jsx":212,"../components/Scroller.jsx":213,"../components/TimeoutTransitionGroup.jsx":214,"../components/WeekScroller.jsx":215,"../components/WorkoutDetails.jsx":216,"../components/Workouts.jsx":217,"../stores/DayStore":227}],232:[function(require,module,exports){
+},{"../actions/DayActions":207,"../components/Nav.jsx":211,"../components/Portal.jsx":212,"../components/Scroller.jsx":213,"../components/TimeoutTransitionGroup.jsx":214,"../components/WeekScroller.jsx":215,"../components/WorkoutDetails.jsx":216,"../components/Workouts.jsx":217,"../stores/DayStore":227,"lodash":31,"moment":33}],232:[function(require,module,exports){
 'use strict';
 
 var Icon = require('../components/Icon.jsx');

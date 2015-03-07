@@ -19,12 +19,12 @@ var Nav = React.createClass({
             <li className='nav-list-item'>
               <a href={todayUrl} className='nav-link nav-link--active'>Тренировки</a>
             </li><li className='nav-list-item nav-list-item--extended'>
-              <a href='/#/' className='nav-link nav-link--user'>
+              <span className='nav-link nav-link--user'>
                 <span className='figure-userpic figure-userpic--nav'>
                   <img src={userpic} alt={this.props.username} />
                 </span>
                 <Icon name='arrow-down' />
-              </a>
+              </span>
               <ul className='nav-list-extra'>
                 <li className='nav-list-extra-item'>
                   <span className='nav-link nav-link--dummy'>
