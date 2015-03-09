@@ -1,0 +1,40 @@
+.scroll
+  position: absolute
+  right: .25rem
+  width: .5rem
+  top: 2px
+  bottom: 2px
+  background-color: $color-neutral
+  border-radius: 9999em
+  user-select: none
+  &:after
+    // invisible area to extend clickable area
+    top: 0
+    bottom: 0
+    right: 0
+    width: 1.5rem
+    display: block
+    position: absolute
+    content: ''
+    z-index: 1
+
+.scroll-thumb
+  position: relative
+  width: 100%
+  border-radius: $radius-small
+  background-color: $color-white
+  height: 50%
+  user-select: none
+  &:after
+    top: 2px
+    bottom: 2px
+    left: 0
+    right: 0
+    display: block
+    position: absolute
+    background-color: $color-neutral-darker
+    content: ''
+    border-radius: 9999em
+.scroll-thumb--active
+  &:after
+    background-color: hsl(hue($color-awesome), 12%, lightness($color-neutral-darker))

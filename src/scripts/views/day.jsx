@@ -9,7 +9,7 @@ var WorkoutDetails = require('../components/WorkoutDetails.jsx');
 var TimeoutTransitionGroup = require('../components/TimeoutTransitionGroup.jsx');
 var DayActions = require('../actions/DayActions');
 var DayStore = require('../stores/DayStore');
-var moment = require('moment');
+// var moment = require('moment');
 var _ = require('lodash');
 
 var Day = React.createClass({
@@ -118,7 +118,7 @@ var Day = React.createClass({
           <TimeoutTransitionGroup enterTimeout={150} leaveTimeout={150} component='div' transitionName='workoutDetailsBackdropTransition'>
             {workoutDetailsBackdrop}
           </TimeoutTransitionGroup>
-          <TimeoutTransitionGroup enterTimeout={100} leaveTimeout={100} component='div' transitionName='workoutDetailsTransition'>
+          <TimeoutTransitionGroup enterTimeout={250} leaveTimeout={100} component='div' transitionName='workoutDetailsTransition'>
             {workoutDetails}
           </TimeoutTransitionGroup>
         </Portal>

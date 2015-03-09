@@ -3,7 +3,6 @@
 var flux = require('fluxstream');
 var DayActions = require('../actions/DayActions');
 var api = require('../utils/api');
-var moment = require('moment');
 var _ = require('lodash');
 
 module.exports = flux.createStore({
@@ -20,43 +19,36 @@ module.exports = flux.createStore({
         var workoutsRef = api.ref.child('days').child(payload.day).child('workouts');
         refs.push(workoutsRef);
 
-        workoutsRef.on('child_removed', function(workoutsSnap) {
-          DayActions.workoutsStream({ action: 'REMOVE', key: workoutsSnap.val() });
+        workoutsRef.on('child_removed', function(removedWorkoutSnap) {
+          DayActions.workoutsStream({ action: 'REMOVE', key: removedWorkoutSnap.val() });
         });
 
-        workoutsRef.on('value', function(workoutsSnap) {
-          if (workoutsSnap.val()) {
-            var workoutIds = _.values(workoutsSnap.val());
-            var workoutRefs = _.map(workoutIds, function(workoutId) {
-              return api.ref.child('workouts').child(workoutId);
-            });
+        workoutsRef.on('child_added', function(workoutSnap) {
+          var workoutId = workoutSnap.val();
+          var workoutRef = api.ref.child('workouts').child(workoutId);
+          refs.push(workoutRef);
 
-            refs.concat(workoutRefs);
+          workoutRef.on('value', function(workoutSnap) {
+            var workout = workoutSnap.val();
 
-            // LISTEN FOR CHANGES IN EVERY WORKOUT
-            _.forEach(workoutRefs, function(workoutRef) {
-              workoutRef.on('value', function(workoutSnap) {
-                var workout = workoutSnap.val();
-                if (workout) {
-                  var userId = workout.author;
-                  var userRef = api.ref.child('users').child(userId);
+            if (workout) {
+              var userId = workout.author;
+              var userRef = api.ref.child('users').child(userId);
 
-                  refs.push(userRef);
+              refs.push(userRef);
 
-                  userRef.on('value', function(userSnap) {
-                    var profile = userSnap.val();
+              userRef.on('value', function(userSnap) {
+                var profile = userSnap.val();
 
-                    var workoutPayload = _.extend(workout, {
-                      action: 'PUT',
-                      key: workoutRef.key(),
-                      username: profile.username
-                    });
-                    DayActions.workoutsStream(workoutPayload);
-                  });
-                }
+                var workoutPayload = _.extend(workout, {
+                  action: 'PUT',
+                  key: workoutRef.key(),
+                  username: profile.username
+                });
+                DayActions.workoutsStream(workoutPayload);
               });
-            });
-          }
+            }
+          });
         });
       }
     });

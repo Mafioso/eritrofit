@@ -6,6 +6,8 @@ var RouterStore = require('./stores/RouterStore');
 var AuthStore = require('./stores/AuthStore');
 var _ = require('lodash');
 var moment = require('moment');
+var fastclick = require('fastclick');
+
 require('moment/locale/ru');
 // moment.locale('ru');
 // moment.locale('en', {
@@ -141,3 +143,5 @@ var App = React.createClass({
 });
 
 React.render(<App />, document.getElementById('main'));
+
+fastclick(document.body);
