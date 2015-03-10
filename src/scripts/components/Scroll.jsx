@@ -51,8 +51,6 @@ var Scroll = React.createClass({
     // start dragging
     event.preventDefault();
 
-    console.log('mouse down fired!');
-
     // don't start if button is not 0
     if (event.button !== 0) { return; }
 

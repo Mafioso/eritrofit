@@ -74,15 +74,6 @@ module.exports = {
       return 'data:image/png;base64,' + data;
     }
   },
-  // APPEND WORKOUT TO A DAY
-  createWorkout: function(workout, day) {
-    var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
-    var _workoutsRef = ref.child('workouts');
-    return Bacon.fromCallback(function(workout, sink){
-      var workoutKey =  _dayWorkoutsRef.push(_workoutsRef.push(workout).key()).key();
-      sink(workoutKey);
-    }, workout);
-  },
   getUsernameById: function(userId) {
     var _usernameRef = ref.child('users/'+userId+'/username');
     var username = '';
@@ -91,6 +82,15 @@ module.exports = {
       username = snapshot.val();
     });
     return username;
+  },
+  /////////////////////// WORKOUTS ///////////////////////
+  createWorkout: function(workout, day) {
+    var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
+    var _workoutsRef = ref.child('workouts');
+    return Bacon.fromCallback(function(workout, sink){
+      var workoutKey =  _dayWorkoutsRef.push(_workoutsRef.push(workout).key()).key();
+      sink(workoutKey);
+    }, workout);
   },
   updateWorkout: function(config) {
     if (config && config.key && config.text) {
@@ -141,5 +141,67 @@ module.exports = {
         });
       }
     }, config);
-  }
+  },
+  /////////////////////// COMMENTS ///////////////////////
+  createComment: function(comment, workoutId) {
+    var workoutCommentsRef = ref.child('workouts').child(workoutId).child('comments');
+
+    var commentsRef = ref.child('comments');
+
+    return Bacon.fromCallback(function(comment, sink) {
+      var commentKey = workoutCommentsRef.push(commentsRef.push(comment).key()).key();
+
+      sink(commentKey);
+    }, comment);
+  },
+  updateComment: function(config) {
+    if (config && config.key && config.text) {
+      var commentRef = ref.child('comments').child(config.key);
+      return Bacon.fromCallback(function(config, sink) {
+        commentRef.transaction(function(currentData) {
+          var newData = currentData || {};
+          newData.text = config.text;
+          newData.editedTimestamp = config.editedTimestamp;
+          return newData;
+        }, function(error, committed) {
+          if (error) {
+            sink(error);
+          } else if (!committed) {
+            sink(_.extend(new Error(), {key: 'ABORTED_TRANSACTION'}));
+          } else {
+            sink('success');
+          }
+        });
+      }, config);
+    }
+  },
+  deleteComment: function(config) {
+    var workoutCommentsRef = ref.child('workouts').child(config.workoutId).child('workouts');
+    var commentRef = ref.child('workouts').child(config.key);
+    return Bacon.fromCallback(function(sink) {
+      if (config && config.key && config.workoutId) {
+        workoutCommentsRef.transaction(function(currentData) {
+          var newData = currentData;
+          var keyToRemove = _.findKey(newData, function(val) {
+            return val === config.key;
+          });
+          if (keyToRemove) {
+            delete newData[keyToRemove];
+          }
+          return newData;
+        }, function(error, committed) {
+          if (error) {
+            console.log('error', error);
+            sink(error);
+          } else if (!committed) {
+            console.log('aborted transaction');
+            sink(_.extend(new Error(), {key: 'ABORTED_TRANSACTION'}));
+          } else {
+            commentRef.off();
+            commentRef.remove();
+          }
+        });
+      }
+    }, config);
+  },
 };

@@ -9,6 +9,16 @@ var InputTextarea = React.createClass({
       this.refs[this.props.name].getDOMNode().select();
     }
   },
+  handleKeyDown: function(event) {
+    if (this.props.onKeyDown) {
+      this.props.onKeyDown(event);
+    }
+  },
+  componentWillReceiveProps: function(nextProps) {
+    if (nextProps.text === '') {
+      this.refs[this.props.name].getDOMNode().value = '';
+    }
+  },
   render: function() {
     return (
       <div className='input input--textarea'>
@@ -16,12 +26,14 @@ var InputTextarea = React.createClass({
           {this.props.text + '\n'}
         </div>
         <textarea
+          disabled={this.props.submitting || false}
           defaultValue={this.props.text}
           ref={this.props.name}
           autoFocus={this.props.autoFocus}
           className='input-field'
           placeholder={this.props.placeholder}
-          onChange={this.handleChange} />
+          onChange={this.handleChange}
+          onKeyDown={this.handleKeyDown} />
       </div>
     );
   }

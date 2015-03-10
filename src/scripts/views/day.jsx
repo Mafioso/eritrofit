@@ -18,17 +18,16 @@ var Day = React.createClass({
       workouts: {},
       selectedWorkout: {},
       showWorkoutDetails: false,
-      selectedWorkoutExists: true,
-      unsubscribe: {}
+      selectedWorkoutExists: true
     });
   },
   componentDidMount: function() {
     // CREATE A LISTENER FOR A NEW DAY DATA
     var self = this;
-    var unsubscribe = DayStore.streams.workoutsStream.onValue(function(payload) {
+    this.unsubFromWorkoutsStream = DayStore.streams.workoutsStream.onValue(function(payload) {
       // every time workout changes we decide whether to set selectedWorkoutExists to true or not
       var workouts;
-      if (self.isMounted() && payload && payload.action) {
+      if (payload && payload.action) {
         switch (payload.action) {
           case 'REMOVE':
             workouts = self.state.workouts;
@@ -58,7 +57,7 @@ var Day = React.createClass({
         }
       }
     });
-    this.setState({ workouts: {}, unsubscribe: unsubscribe });
+    this.setState({ workouts: {} });
     // FIRST TIME
     DayActions.setupDayStreams({ day: this.props.params.day });
   },
@@ -70,7 +69,7 @@ var Day = React.createClass({
     });
   },
   componentWillUnmount: function() {
-    this.state.unsubscribe();
+    this.unsubFromWorkoutsStream();
   },
   hideWorkoutDetails: function() {
     this.setState({
@@ -93,6 +92,7 @@ var Day = React.createClass({
       );
       workoutDetails = (
         <WorkoutDetails
+          user={this.props.user}
           key={this.state.selectedWorkout.key}
           workout={this.state.selectedWorkout}
           handleModalClose={this.hideWorkoutDetails}

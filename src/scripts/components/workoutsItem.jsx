@@ -23,7 +23,8 @@ var WorkoutsItem = React.createClass({
       editingText: '',
       submittingUpdate: false,
       removing: false,
-      updateWorkoutSuccessUnsub: {}
+      updateWorkoutSuccessUnsub: {},
+      goingToDelete: false
     };
   },
   componentWillMount: function() {
@@ -49,9 +50,15 @@ var WorkoutsItem = React.createClass({
       day: this.props.day
     }));
   },
+  turnOnGoingToDelete: function() {
+    this.setState({
+      goingToDelete: true
+    });
+  },
   handleWorkoutDelete: function() {
     this.setState({
-      removing: true
+      removing: true,
+      goingToDelete: false
     });
     var config = {
       day: this.props.day,
@@ -74,7 +81,8 @@ var WorkoutsItem = React.createClass({
   handleWorkoutEdit: function() {
     this.setState({
       showForm: !this.state.showForm,
-      editingText: !this.state.showForm ? this.props.workout.text : ''
+      editingText: !this.state.showForm ? this.props.workout.text : '',
+      goingToDelete: false
     });
   },
   handleEditingWorkoutTextUpdate: function(text) {
@@ -113,7 +121,24 @@ var WorkoutsItem = React.createClass({
         </span>
       );
     }
+
     if (this.state.showForm) {
+      var deleteButton =  <button
+                            onClick={this.turnOnGoingToDelete}
+                            className='workout-preDelete'
+                            type='button'>
+                            <Icon name='trash' />
+                          </button>;
+      if (this.state.goingToDelete) {
+        deleteButton =  <button
+                          onClick={this.handleWorkoutDelete}
+                          className='workout-delete'
+                          type='button'
+                          disabled={this.state.removing}>
+                          Да?
+                        </button>;
+      }
+
       return (
         <li className='workouts-item'>
           <div className='workout-userpic figure-userpic'>
@@ -122,7 +147,7 @@ var WorkoutsItem = React.createClass({
           <form onSubmit={this.handleWorkoutUpdate} className='workout'>
             <div className='workout-meta'>
               <div className='workout-meta-body'>
-                <strong className='workout-meta-user'>{this.props.workout.username}</strong>, { timestamp }
+                <strong className='workout-meta-user'>{this.props.workout.username}</strong> { timestamp }
               </div>
               <div className='workout-meta-controls'>
                 <button
@@ -142,13 +167,7 @@ var WorkoutsItem = React.createClass({
                 placeholder='Введите инструкции' />
             </div>
             <div className='workout-footer'>
-              <button
-                onClick={this.handleWorkoutDelete}
-                className='workout-delete'
-                type='button'
-                disabled={this.state.removing}>
-                Удалить комплекс
-              </button>
+              {deleteButton}
               <button
                 className='workout-submit'
                 type='submit'
@@ -169,13 +188,13 @@ var WorkoutsItem = React.createClass({
           <div className='workout'>
             <div className='workout-meta'>
               <div className='workout-meta-body'>
-                <strong className='workout-meta-user'>{this.props.workout.username}</strong>, {timestamp}
+                <strong className='workout-meta-user'>{this.props.workout.username}</strong> {timestamp}
               </div>
               <div className='workout-meta-controls'>
                 {editButton}
                 <button onClick={this.handleShowWorkoutDetails} className='workout-meta-controls-btn' type='button'>
                   <Icon name='chat' />
-                  0
+                  {_.values(this.props.workout.comments).length}
                 </button>
               </div>
             </div>

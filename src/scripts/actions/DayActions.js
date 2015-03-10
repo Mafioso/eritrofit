@@ -5,7 +5,6 @@ module.exports = flux.createActions([
   'setupDayStreams',
 
   'workoutsStream',
-  'commentsStream',
 
   'createWorkout',
   'createWorkoutSuccess',

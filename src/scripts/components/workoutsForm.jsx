@@ -19,7 +19,7 @@ var WorkoutsForm = React.createClass({
   },
   componentDidMount: function() {
     var self = this;
-    var createWorkoutSuccessUnsub = DayStore.streams.createWorkoutSuccess.listen(function() {
+    this.unsubFromCreateWorkoutSuccess = DayStore.streams.createWorkoutSuccess.listen(function() {
       // if (self.isMounted()) {
         self.setState({
           submitting: false,
@@ -28,7 +28,6 @@ var WorkoutsForm = React.createClass({
         });
       // }
     });
-    this.setState({createWorkoutSuccessUnsub: createWorkoutSuccessUnsub});
   },
   handleNewWorkoutTextUpdate: function(text) {
     this.setState({
@@ -53,7 +52,7 @@ var WorkoutsForm = React.createClass({
     });
   },
   componentWillUnmount: function() {
-    this.state.createWorkoutSuccessUnsub();
+    this.unsubFromCreateWorkoutSuccess();
   },
   render: function() {
     var form;

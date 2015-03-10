@@ -51236,10 +51236,27 @@ module.exports = flux.createActions([
 var flux = require('fluxstream');
 
 module.exports = flux.createActions([
+  'setupCommentsStream',
+  'commentsStream',
+
+  'createComment',
+  'createCommentSuccess',
+
+  'updateComment',
+  'updateCommentSuccess',
+
+  'deleteComment',
+  'deleteCommentSuccess'
+]);
+
+},{"fluxstream":5}],210:[function(require,module,exports){
+'use strict';
+var flux = require('fluxstream');
+
+module.exports = flux.createActions([
   'setupDayStreams',
 
   'workoutsStream',
-  'commentsStream',
 
   'createWorkout',
   'createWorkoutSuccess',
@@ -51251,7 +51268,7 @@ module.exports = flux.createActions([
   'deleteWorkoutSuccess'
 ]);
 
-},{"fluxstream":5}],210:[function(require,module,exports){
+},{"fluxstream":5}],211:[function(require,module,exports){
 'use strict';
 var flux = require('fluxstream');
 
@@ -51261,20 +51278,146 @@ module.exports = flux.createActions([
   'redirectPrompt'
 ]);
 
-},{"fluxstream":5}],211:[function(require,module,exports){
+},{"fluxstream":5}],212:[function(require,module,exports){
 'use strict';
 
+var InputTextarea = require('./InputTextarea.jsx');
+var CommentActions = require('../actions/CommentActions');
+var CommentStore = require('../stores/CommentStore');
+var moment = require('moment');
+
+var ENTER_KEY_CODE = 13;
+
 var CommentForm = React.createClass({displayName: "CommentForm",
+  getInitialState: function() {
+    return {
+      submitting: false,
+      text: ''
+    };
+  },
+  handleTextUpdate: function(text) {
+    this.setState({
+      text: text
+    });
+  },
+  handleKeyDown: function(event) {
+    if (event.keyCode === ENTER_KEY_CODE) {
+      event.preventDefault();
+
+      var inputValue = this.state.text;
+      if (!inputValue) {
+        return;
+      }
+
+      this.setState({
+        submitting: true
+      });
+
+      CommentActions.createComment({
+        text: inputValue,
+        workoutId: this.props.workoutId,
+        user: this.props.user,
+        timestamp: moment().utc().format()
+      });
+
+    }
+  },
+  componentDidMount: function() {
+    var self = this;
+    this.unsubFromCreateCommentSuccess = CommentStore.streams.createCommentSuccess.listen(function() {
+      self.setState({
+        submitting: false,
+        text: ''
+      });
+    });
+  },
+  componentWillUnmount: function() {
+    this.unsubFromCreateCommentSuccess();
+  },
   render: function() {
     return (
-      React.createElement("div", null)
+      React.createElement("form", {className: "chatForm"}, 
+        React.createElement(InputTextarea, {
+          disabled: this.state.submitting, 
+          name: "chat_textarea", 
+          placeholder: "", 
+          autoFocus: true, 
+          text: this.state.text, 
+          onTextChange: this.handleTextUpdate, 
+          onKeyDown: this.handleKeyDown}
+          )
+      )
     );
   }
 });
 
 module.exports = CommentForm;
 
-},{}],212:[function(require,module,exports){
+},{"../actions/CommentActions":209,"../stores/CommentStore":235,"./InputTextarea.jsx":216,"moment":35}],213:[function(require,module,exports){
+'use strict';
+
+var api = require('../utils/api');
+var moment = require('moment');
+
+var CommentItem = React.createClass({displayName: "CommentItem",
+  render: function() {
+    var userpic = api.getBase64Userpic(this.props.comment.author);
+    var timestamp = moment(this.props.comment.timestamp).format('D MMMM H:mm');
+
+    return (
+      React.createElement("div", {className: "workoutDetails-comment"}, 
+        React.createElement("div", {className: "workoutDetails-comment-userpic figure-userpic"}, 
+          React.createElement("img", {src: userpic})
+        ), 
+        React.createElement("div", {className: "workoutDetails-comment-body"}, 
+          React.createElement("div", {className: "workoutDetails-comment-meta"}, 
+            React.createElement("strong", {className: "workoutDetails-comment-meta-user"}, this.props.comment.username), " ", timestamp
+          ), 
+          React.createElement("div", {className: "workoutDetails-comment-entry"}, 
+            this.props.comment.text
+          )
+        )
+      )
+    );
+  }
+});
+
+module.exports = CommentItem;
+
+},{"../utils/api":238,"moment":35}],214:[function(require,module,exports){
+'use strict';
+
+var CommentItem = require('./CommentItem.jsx');
+var _ = require('lodash');
+var moment = require('moment');
+
+var Comments = React.createClass({displayName: "Comments",
+  render: function() {
+    var self = this;
+
+    var commentBlobs = _.sortBy(_.values(this.props.items),
+    function(blob) {
+      return moment(blob.timestamp);
+    });
+
+    var comments = _.map(commentBlobs, function(comment) {
+      return (
+        React.createElement(CommentItem, {
+          key: comment.key, 
+          user: self.props.user, 
+          comment: comment})
+      );
+    });
+
+    return (
+      React.createElement("div", null, comments)
+    );
+  }
+});
+
+module.exports = Comments;
+
+},{"./CommentItem.jsx":213,"lodash":33,"moment":35}],215:[function(require,module,exports){
 'use strict';
 
 var Icon = React.createClass({displayName: "Icon",
@@ -51289,7 +51432,7 @@ var Icon = React.createClass({displayName: "Icon",
 
 module.exports = Icon;
 
-},{}],213:[function(require,module,exports){
+},{}],216:[function(require,module,exports){
 'use strict';
 
 var InputTextarea = React.createClass({displayName: "InputTextarea",
@@ -51301,6 +51444,16 @@ var InputTextarea = React.createClass({displayName: "InputTextarea",
       this.refs[this.props.name].getDOMNode().select();
     }
   },
+  handleKeyDown: function(event) {
+    if (this.props.onKeyDown) {
+      this.props.onKeyDown(event);
+    }
+  },
+  componentWillReceiveProps: function(nextProps) {
+    if (nextProps.text === '') {
+      this.refs[this.props.name].getDOMNode().value = '';
+    }
+  },
   render: function() {
     return (
       React.createElement("div", {className: "input input--textarea"}, 
@@ -51308,12 +51461,14 @@ var InputTextarea = React.createClass({displayName: "InputTextarea",
           this.props.text + '\n'
         ), 
         React.createElement("textarea", {
+          disabled: this.props.submitting || false, 
           defaultValue: this.props.text, 
           ref: this.props.name, 
           autoFocus: this.props.autoFocus, 
           className: "input-field", 
           placeholder: this.props.placeholder, 
-          onChange: this.handleChange})
+          onChange: this.handleChange, 
+          onKeyDown: this.handleKeyDown})
       )
     );
   }
@@ -51321,7 +51476,7 @@ var InputTextarea = React.createClass({displayName: "InputTextarea",
 
 module.exports = InputTextarea;
 
-},{}],214:[function(require,module,exports){
+},{}],217:[function(require,module,exports){
 'use strict';
 
 var Icon = require('./Icon.jsx');
@@ -51369,7 +51524,7 @@ var Nav = React.createClass({displayName: "Nav",
 
 module.exports = Nav;
 
-},{"../utils/api":233,"./Icon.jsx":212,"moment":35}],215:[function(require,module,exports){
+},{"../utils/api":238,"./Icon.jsx":215,"moment":35}],218:[function(require,module,exports){
 'use strict';
 
 var Portal = React.createClass({displayName: "Portal",
@@ -51398,7 +51553,7 @@ var Portal = React.createClass({displayName: "Portal",
 
 module.exports = Portal;
 
-},{}],216:[function(require,module,exports){
+},{}],219:[function(require,module,exports){
 'use strict';
 
 var classNames = require('classnames');
@@ -51451,8 +51606,6 @@ var Scroll = React.createClass({displayName: "Scroll",
   handleMouseDown: function(event) {
     // start dragging
     event.preventDefault();
-
-    console.log('mouse down fired!');
 
     // don't start if button is not 0
     if (event.button !== 0) { return; }
@@ -51570,7 +51723,7 @@ var Scroll = React.createClass({displayName: "Scroll",
 
 module.exports = Scroll;
 
-},{"classnames":2}],217:[function(require,module,exports){
+},{"classnames":2}],220:[function(require,module,exports){
 'use strict';
 
 var Icon = require('./Icon.jsx');
@@ -51605,7 +51758,7 @@ var Scroller = React.createClass({displayName: "Scroller",
 
 module.exports = Scroller;
 
-},{"./Icon.jsx":212,"moment":35}],218:[function(require,module,exports){
+},{"./Icon.jsx":215,"moment":35}],221:[function(require,module,exports){
 'use strict';
 
 // https://github.com/Khan/react-components/blob/master/js/timeout-transition-group.jsx
@@ -51850,7 +52003,7 @@ var TimeoutTransitionGroup = React.createClass({displayName: "TimeoutTransitionG
 
 module.exports = TimeoutTransitionGroup;
 
-},{}],219:[function(require,module,exports){
+},{}],222:[function(require,module,exports){
 'use strict';
 
 var moment = require('moment');
@@ -51889,15 +52042,20 @@ var WeekScroller = React.createClass({displayName: "WeekScroller",
 
 module.exports = WeekScroller;
 
-},{"moment":35}],220:[function(require,module,exports){
+},{"moment":35}],223:[function(require,module,exports){
 'use strict';
 
 var Icon = require('./Icon.jsx');
 var Scroll = require('./Scroll.jsx');
+var Comments = require('./Comments.jsx');
 var CommentForm = require('./CommentForm.jsx');
-var api = require('../utils/api');
-var moment = require('moment');
+var WorkoutDetailsHeader = require('./WorkoutDetailsHeader.jsx');
+var CommentStore = require('../stores/CommentStore');
+var CommentActions = require('../actions/CommentActions');
+// var api = require('../utils/api');
+// var moment = require('moment');
 var Bacon = require('baconjs');
+// var _ = require('lodash');
 
 module.exports = React.createClass({displayName: "exports",
   closeModal: function(event) {
@@ -51911,7 +52069,7 @@ module.exports = React.createClass({displayName: "exports",
   getInitialState: function() {
     return {
       shouldScrollBottom: true,
-      items: []
+      comments: []
     };
   },
   componentWillMount: function() {
@@ -51919,6 +52077,7 @@ module.exports = React.createClass({displayName: "exports",
     document.body.className += ' body--stopScroll';
   },
   componentDidMount: function() {
+    //////////////////// SETUP SCROLL ////////////////////
     var scrollable = this.refs.scrollable.getDOMNode();
     var self = this;
 
@@ -51938,15 +52097,42 @@ module.exports = React.createClass({displayName: "exports",
     this.scrollableScrollHeightStream.push(scrollable.scrollHeight);
     this.scrollTopStream.push(scrollable.scrollHeight);
 
-    window.addEventListener('resize', this.updateScrollableHeightValue);
+    window.addEventListener('resize', this.updateScrollableConfiguration);
 
-    // this.interval = setInterval(this.addEvent, 500);
+    //////////////////// SETUP COMMENTS ////////////////////
+    this.unsubFromCommentsStream = CommentStore.streams.commentsStream.onValue(function(payload) {
+      var comments;
+      if (payload && payload.action) {
+        switch (payload.action) {
+          case 'REMOVE':
+            comments = self.state.comments;
+            delete comments[payload.key];
+            self.setState({
+              comments: comments
+            });
+            break;
+          case 'PUT':
+            comments = self.state.comments;
+            comments[payload.key] = payload;
+            self.setState({
+              comments: comments
+            });
+            break;
+          default:
+            break;
+        }
+      }
+    });
+    this.setState({ comments: {} });
 
-    // parameters to update when trying to scroll
-    // - translateX     for thumb
-    // - scrollTop      for scrollable area
+    // SETUP
+    CommentActions.setupCommentsStream({ workoutId: this.props.workout.key });
+  },
+  updateScrollableConfiguration: function() {
+    var scrollable = this.refs.scrollable.getDOMNode();
 
-    //
+    this.scrollableHeightStream.push(scrollable.clientHeight);
+    this.scrollableScrollHeightStream.push(scrollable.scrollHeight);
   },
   updateScrollableHeightValue: function() {
     var scrollable = this.refs.scrollable.getDOMNode();
@@ -51968,7 +52154,7 @@ module.exports = React.createClass({displayName: "exports",
     // remove class from body
     document.body.className = document.body.className.replace(/\bbody--stopScroll\b/, '');
 
-    window.removeEventListener('resize', this.updateScrollableHeightValue);
+    window.removeEventListener('resize', this.updateScrollableConfiguration);
 
     this.mousePositionStream.push(Bacon.noMore);
     this.wheelStream.push(Bacon.noMore);
@@ -51980,9 +52166,76 @@ module.exports = React.createClass({displayName: "exports",
     this.unsubFromMousePositionStream();
     this.unsubFromScrollTopStream();
 
-    clearInterval(this.interval);
+    this.unsubFromCommentsStream();
   },
   render: function() {
+
+    if (!this.props.selectedWorkoutExists) {
+      return (
+        React.createElement("div", {className: "modal-body workoutDetails-container"}, 
+          React.createElement("button", {onClick: this.closeModal, className: "workoutDetails-close", type: "button"}, 
+            React.createElement(Icon, {name: "x"})
+          ), 
+          React.createElement("div", {className: "workoutDetails"}, 
+            React.createElement("div", {className: "workoutDetails-error"}, 
+              "Этот комплекс был удален."
+            )
+          )
+        )
+      );
+    }
+
+    return (
+
+      React.createElement("div", {className: "modal-body workoutDetails-container"}, 
+        React.createElement("button", {onClick: this.closeModal, className: "workoutDetails-close", type: "button"}, 
+          React.createElement(Icon, {name: "x"})
+        ), 
+
+        React.createElement("div", {className: "workoutDetails"}, 
+          React.createElement(WorkoutDetailsHeader, {
+            workout: this.props.workout}
+            ), 
+
+          React.createElement("div", {className: "workoutDetails-body"}, 
+            React.createElement("div", {className: "workoutDetails-scrollable", onWheel: this.handleWheel, ref: "scrollable"}, 
+
+              React.createElement(Comments, {
+                user: this.props.user, 
+                items: this.state.comments}), 
+
+              React.createElement(Scroll, {
+                scrollableHeightStream: this.scrollableHeightStream, 
+                scrollableScrollHeightStream: this.scrollableScrollHeightStream, 
+                scrollTopStream: this.scrollTopStream, 
+                mousePositionStream: this.mousePositionStream})
+            )
+          ), 
+
+          React.createElement("div", {className: "workoutDetails-footer"}, 
+            React.createElement(CommentForm, {
+              workoutId: this.props.workout.key, 
+              user: this.props.user})
+          )
+        )
+      )
+    );
+  },
+  handleWheel: function(event) {
+    this.wheelStream.push(event.deltaY);
+  }
+});
+
+},{"../actions/CommentActions":209,"../stores/CommentStore":235,"./CommentForm.jsx":212,"./Comments.jsx":214,"./Icon.jsx":215,"./Scroll.jsx":219,"./WorkoutDetailsHeader.jsx":224,"baconjs":1}],224:[function(require,module,exports){
+'use strict';
+
+var moment = require('moment');
+var _ = require('lodash');
+var api = require('../utils/api');
+
+var WorkoutDetailsHeader = React.createClass({displayName: "WorkoutDetailsHeader",
+  render: function() {
+
     var userpic = api.getLargeBase64Userpic(this.props.workout.author);
     var dayTime = new moment(this.props.workout.day, 'DDMMYY');
     var timestampFormat = 'H:mm';
@@ -51998,87 +52251,51 @@ module.exports = React.createClass({displayName: "exports",
         )
       );
     }
-    if (!this.props.selectedWorkoutExists) {
-      return (
-        React.createElement("div", {className: "modal-body workoutDetails-container"}, 
-          React.createElement("button", {onClick: this.closeModal, className: "workoutDetails-close", type: "button"}, 
-            React.createElement(Icon, {name: "x"})
-          ), 
-          React.createElement("div", {className: "workoutDetails"}, 
-            React.createElement("div", {className: "workoutDetails-error"}, 
-              "Этот комплекс был удален."
-            )
-          )
-        )
-      );
+
+    var text = this.props.workout.text;
+    var split = text.split(/(\r\n|\n|\r)/gm);
+    var removedLines = false;
+
+    if (Math.ceil(split.length / 2) > 3) {
+      removedLines = true;
+      text = '';
+      for (var i = 0; i < 5; i++) {
+        text += split[i];
+      }
+    }
+
+    text = _.trunc(text, {
+      'length': 140,
+      'separator': /,? +/,
+    });
+
+    if (removedLines && !_.endsWith(text, '...')) {
+      text += '...';
     }
     return (
-      React.createElement("div", {className: "modal-body workoutDetails-container"}, 
-        React.createElement("button", {onClick: this.closeModal, className: "workoutDetails-close", type: "button"}, 
-          React.createElement(Icon, {name: "x"})
+      React.createElement("div", {className: "workoutDetails-header"}, 
+        React.createElement("div", {className: "workout-userpic figure-userpic"}, 
+          React.createElement("img", {src: userpic})
         ), 
-
-        React.createElement("div", {className: "workoutDetails"}, 
-          React.createElement("div", {className: "workoutDetails-header"}, 
-            React.createElement("div", {className: "workout-userpic figure-userpic"}, 
-              React.createElement("img", {src: userpic})
-            ), 
-            React.createElement("div", {className: "workout"}, 
-              React.createElement("div", {className: "workout-meta"}, 
-                React.createElement("div", {className: "workout-meta-body"}, 
-                  React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), ", ", timestamp
-                )
-              ), 
-              React.createElement("div", {className: "workout-body"}, 
-                this.props.workout.text
-              )
+        React.createElement("div", {className: "workout"}, 
+          React.createElement("div", {className: "workout-meta"}, 
+            React.createElement("div", {className: "workout-meta-body"}, 
+              React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), " ", timestamp
             )
           ), 
-
-          React.createElement("div", {className: "workoutDetails-body"}, 
-            React.createElement("div", {className: "workoutDetails-scrollable", onWheel: this.handleWheel, ref: "scrollable"}, 
-
-              React.createElement("div", {style:  { height: '1000px'} }), 
-              React.createElement("ul", null, 
-                this.state.items.map(function(item) {
-                  return React.createElement("li", {key: item}, item);
-                })
-              )
-            ), 
-            React.createElement(Scroll, {
-              scrollableHeightStream: this.scrollableHeightStream, 
-              scrollableScrollHeightStream: this.scrollableScrollHeightStream, 
-              scrollTopStream: this.scrollTopStream, 
-              mousePositionStream: this.mousePositionStream})
-          ), 
-
-          React.createElement("div", {className: "workoutDetails-footer"}, 
-            React.createElement(CommentForm, null)
+          React.createElement("div", {className: "workout-body"}, 
+            text
           )
         )
       )
     );
-  },
-  handleWheel: function(event) {
-    this.wheelStream.push(event.deltaY);
-  },
-  addEvent: function() {
-    var newItems = this.state.items;
-    // either remove or add an item
-    var desiredIndex = Math.floor(Math.random() * newItems.length);
-    newItems.push('Event ' + newItems.length);
 
-    if (desiredIndex % 2 !== 0) {
-      delete newItems[desiredIndex];
-    }
-
-    this.setState({
-      items: newItems
-    });
-  },
+  }
 });
 
-},{"../utils/api":233,"./CommentForm.jsx":211,"./Icon.jsx":212,"./Scroll.jsx":216,"baconjs":1,"moment":35}],221:[function(require,module,exports){
+module.exports = WorkoutDetailsHeader;
+
+},{"../utils/api":238,"lodash":33,"moment":35}],225:[function(require,module,exports){
 'use strict';
 
 var WorkoutsForm = require('./workoutsForm.jsx');
@@ -52133,11 +52350,11 @@ var Workouts = React.createClass({displayName: "Workouts",
 
 module.exports = Workouts;
 
-},{"./permit.jsx":224,"./workoutsForm.jsx":225,"./workoutsItem.jsx":226,"lodash":33,"moment":35}],222:[function(require,module,exports){
-module.exports=require(212)
-},{}],223:[function(require,module,exports){
-module.exports=require(213)
-},{}],224:[function(require,module,exports){
+},{"./permit.jsx":228,"./workoutsForm.jsx":229,"./workoutsItem.jsx":230,"lodash":33,"moment":35}],226:[function(require,module,exports){
+module.exports=require(215)
+},{}],227:[function(require,module,exports){
+module.exports=require(216)
+},{}],228:[function(require,module,exports){
 'use strict';
 
 var Permit = React.createClass({displayName: "Permit",
@@ -52159,7 +52376,7 @@ var Permit = React.createClass({displayName: "Permit",
 
 module.exports = Permit;
 
-},{}],225:[function(require,module,exports){
+},{}],229:[function(require,module,exports){
 'use strict';
 
 var api = require('../utils/api');
@@ -52181,7 +52398,7 @@ var WorkoutsForm = React.createClass({displayName: "WorkoutsForm",
   },
   componentDidMount: function() {
     var self = this;
-    var createWorkoutSuccessUnsub = DayStore.streams.createWorkoutSuccess.listen(function() {
+    this.unsubFromCreateWorkoutSuccess = DayStore.streams.createWorkoutSuccess.listen(function() {
       // if (self.isMounted()) {
         self.setState({
           submitting: false,
@@ -52190,7 +52407,6 @@ var WorkoutsForm = React.createClass({displayName: "WorkoutsForm",
         });
       // }
     });
-    this.setState({createWorkoutSuccessUnsub: createWorkoutSuccessUnsub});
   },
   handleNewWorkoutTextUpdate: function(text) {
     this.setState({
@@ -52215,7 +52431,7 @@ var WorkoutsForm = React.createClass({displayName: "WorkoutsForm",
     });
   },
   componentWillUnmount: function() {
-    this.state.createWorkoutSuccessUnsub();
+    this.unsubFromCreateWorkoutSuccess();
   },
   render: function() {
     var form;
@@ -52264,7 +52480,7 @@ var WorkoutsForm = React.createClass({displayName: "WorkoutsForm",
 
 module.exports = WorkoutsForm;
 
-},{"../actions/DayActions":209,"../stores/DayStore":231,"../utils/api":233,"./Icon.jsx":212,"./inputTextarea.jsx":223,"moment":35}],226:[function(require,module,exports){
+},{"../actions/DayActions":210,"../stores/DayStore":236,"../utils/api":238,"./Icon.jsx":215,"./inputTextarea.jsx":227,"moment":35}],230:[function(require,module,exports){
 'use strict';
 
 var api = require('../utils/api');
@@ -52290,7 +52506,8 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
       editingText: '',
       submittingUpdate: false,
       removing: false,
-      updateWorkoutSuccessUnsub: {}
+      updateWorkoutSuccessUnsub: {},
+      goingToDelete: false
     };
   },
   componentWillMount: function() {
@@ -52316,9 +52533,15 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
       day: this.props.day
     }));
   },
+  turnOnGoingToDelete: function() {
+    this.setState({
+      goingToDelete: true
+    });
+  },
   handleWorkoutDelete: function() {
     this.setState({
-      removing: true
+      removing: true,
+      goingToDelete: false
     });
     var config = {
       day: this.props.day,
@@ -52341,7 +52564,8 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
   handleWorkoutEdit: function() {
     this.setState({
       showForm: !this.state.showForm,
-      editingText: !this.state.showForm ? this.props.workout.text : ''
+      editingText: !this.state.showForm ? this.props.workout.text : '',
+      goingToDelete: false
     });
   },
   handleEditingWorkoutTextUpdate: function(text) {
@@ -52380,7 +52604,24 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
         )
       );
     }
+
     if (this.state.showForm) {
+      var deleteButton =  React.createElement("button", {
+                            onClick: this.turnOnGoingToDelete, 
+                            className: "workout-preDelete", 
+                            type: "button"}, 
+                            React.createElement(Icon, {name: "trash"})
+                          );
+      if (this.state.goingToDelete) {
+        deleteButton =  React.createElement("button", {
+                          onClick: this.handleWorkoutDelete, 
+                          className: "workout-delete", 
+                          type: "button", 
+                          disabled: this.state.removing}, 
+                          "Да?"
+                        );
+      }
+
       return (
         React.createElement("li", {className: "workouts-item"}, 
           React.createElement("div", {className: "workout-userpic figure-userpic"}, 
@@ -52389,7 +52630,7 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
           React.createElement("form", {onSubmit: this.handleWorkoutUpdate, className: "workout"}, 
             React.createElement("div", {className: "workout-meta"}, 
               React.createElement("div", {className: "workout-meta-body"}, 
-                React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), ", ", timestamp 
+                React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), " ", timestamp 
               ), 
               React.createElement("div", {className: "workout-meta-controls"}, 
                 React.createElement("button", {
@@ -52409,13 +52650,7 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
                 placeholder: "Введите инструкции"})
             ), 
             React.createElement("div", {className: "workout-footer"}, 
-              React.createElement("button", {
-                onClick: this.handleWorkoutDelete, 
-                className: "workout-delete", 
-                type: "button", 
-                disabled: this.state.removing}, 
-                "Удалить комплекс"
-              ), 
+              deleteButton, 
               React.createElement("button", {
                 className: "workout-submit", 
                 type: "submit", 
@@ -52436,13 +52671,13 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
           React.createElement("div", {className: "workout"}, 
             React.createElement("div", {className: "workout-meta"}, 
               React.createElement("div", {className: "workout-meta-body"}, 
-                React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), ", ", timestamp
+                React.createElement("strong", {className: "workout-meta-user"}, this.props.workout.username), " ", timestamp
               ), 
               React.createElement("div", {className: "workout-meta-controls"}, 
                 editButton, 
                 React.createElement("button", {onClick: this.handleShowWorkoutDetails, className: "workout-meta-controls-btn", type: "button"}, 
                   React.createElement(Icon, {name: "chat"}), 
-                  "0"
+                  _.values(this.props.workout.comments).length
                 )
               )
             ), 
@@ -52468,7 +52703,7 @@ var WorkoutsItem = React.createClass({displayName: "WorkoutsItem",
 
 module.exports = WorkoutsItem;
 
-},{"../actions/DayActions":209,"../stores/DayStore":231,"../utils/api":233,"./InputTextarea.jsx":213,"./icon.jsx":222,"lodash":33,"moment":35}],227:[function(require,module,exports){
+},{"../actions/DayActions":210,"../stores/DayStore":236,"../utils/api":238,"./InputTextarea.jsx":216,"./icon.jsx":226,"lodash":33,"moment":35}],231:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -52485,7 +52720,7 @@ module.exports = {
   NOT_FOUND: '/404'
 };
 
-},{}],228:[function(require,module,exports){
+},{}],232:[function(require,module,exports){
 'use strict';
 
 var keyMirror = require('keymirror');
@@ -52504,7 +52739,7 @@ module.exports = keyMirror({
   NOT_FOUND: null
 });
 
-},{"keymirror":32}],229:[function(require,module,exports){
+},{"keymirror":32}],233:[function(require,module,exports){
 'use strict';
 
 window.React = require('react/addons');
@@ -52653,7 +52888,7 @@ React.render(React.createElement(App, null), document.getElementById('main'));
 
 fastclick(document.body);
 
-},{"./actions/RouterActions":210,"./constants/views":228,"./stores/AuthStore":230,"./stores/RouterStore":232,"./views/day.jsx":235,"./views/login.jsx":236,"./views/resetPassword.jsx":237,"fastclick":3,"lodash":33,"moment":35,"moment/locale/ru":34,"react/addons":37}],230:[function(require,module,exports){
+},{"./actions/RouterActions":211,"./constants/views":232,"./stores/AuthStore":234,"./stores/RouterStore":237,"./views/day.jsx":240,"./views/login.jsx":241,"./views/resetPassword.jsx":242,"fastclick":3,"lodash":33,"moment":35,"moment/locale/ru":34,"react/addons":37}],234:[function(require,module,exports){
 'use strict';
 
 var flux = require('fluxstream');
@@ -52702,7 +52937,119 @@ module.exports = flux.createStore({
   }
 });
 
-},{"../actions/AuthActions":208,"../actions/RouterActions":210,"../constants/routes":227,"../utils/api":233,"fluxstream":5,"type-check":200}],231:[function(require,module,exports){
+},{"../actions/AuthActions":208,"../actions/RouterActions":211,"../constants/routes":231,"../utils/api":238,"fluxstream":5,"type-check":200}],235:[function(require,module,exports){
+'use strict';
+
+var flux = require('fluxstream');
+var CommentActions = require('../actions/CommentActions');
+var api = require('../utils/api');
+var _ = require('lodash');
+
+var CommentStore = flux.createStore({
+  init: function() {
+    var refs = [];
+
+    CommentActions.setupCommentsStream.listen(function(payload) {
+      // release the callbacks!
+      _.forEach(refs, function(ref) {
+        ref.off();
+      });
+      refs = [];
+
+      if (payload) {
+        var commentsRef = api.ref.child('workouts').child(payload.workoutId).child('comments');
+        refs.push(commentsRef);
+
+        commentsRef.on('child_removed', function(removedCommentSnap) {
+          CommentActions.commentsStream({ action: 'REMOVE', key: removedCommentSnap.val() });
+        });
+
+        commentsRef.on('child_added', function(commentSnap) {
+          var commentId = commentSnap.val();
+          var commentRef = api.ref.child('comments').child(commentId);
+          refs.push(commentRef);
+
+          commentRef.on('value', function(commentSnap) {
+            var comment = commentSnap.val();
+
+            if (comment) {
+              var userId = comment.author;
+              var userRef = api.ref.child('users').child(userId);
+
+              refs.push(userRef);
+
+              userRef.on('value', function(userSnap) {
+                var profile = userSnap.val();
+
+                var commentPayload = _.extend(comment, {
+                  action: 'PUT',
+                  key: commentRef.key(),
+                  username: profile.username
+                });
+                CommentActions.commentsStream(commentPayload);
+              });
+            }
+
+          });
+
+        });
+
+      }
+    });
+
+    CommentActions.updateComment.listen(function(payload) {
+      var updateCommentStream = api.updateComment(payload);
+      updateCommentStream.onValue(function(payload) {
+        if (payload === 'success') {
+          CommentActions.updateCommentSuccess(payload);
+        }
+      });
+    });
+
+    CommentActions.deleteComment.listen(function(payload) {
+      var deleteCommentStream = api.deleteComment(payload);
+      deleteCommentStream.onValue(function(payload) {
+        CommentActions.deleteCommentSuccess(payload);
+      });
+    });
+
+    CommentActions.createComment.listen(function(payload) {
+      // 1. local timestamp, assume it's correct
+      // 2. author id
+      // 3. text
+      // 4. workout
+      if (payload.timestamp && payload.user && payload.text && payload.workoutId) {
+        var createComment = api.createComment({
+          timestamp: payload.timestamp,
+          author: payload.user,
+          text: payload.text
+        }, payload.workoutId);
+        createComment.onValue(function(payload) {
+          CommentActions.createCommentSuccess(payload);
+        });
+      }
+    });
+
+  },
+  config: {
+    commentsStream: {
+      action: CommentActions.commentsStream
+    },
+    createCommentSuccess: {
+      action: CommentActions.createCommentSuccess
+    },
+    updateCommentSuccess: {
+      action: CommentActions.updateCommentSuccess
+    },
+    deleteCommentSuccess: {
+      action: CommentActions.deleteCommentSuccess
+    }
+  }
+});
+
+module.exports = CommentStore;
+
+},{"../actions/CommentActions":209,"../utils/api":238,"fluxstream":5,"lodash":33}],236:[function(require,module,exports){
 'use strict';
 
 var flux = require('fluxstream');
@@ -52807,7 +53154,7 @@ module.exports = flux.createStore({
   }
 });
 
-},{"../actions/DayActions":209,"../utils/api":233,"fluxstream":5,"lodash":33}],232:[function(require,module,exports){
+},{"../actions/DayActions":210,"../utils/api":238,"fluxstream":5,"lodash":33}],237:[function(require,module,exports){
 'use strict';
 
 var flux = require('fluxstream');
@@ -52925,7 +53272,7 @@ module.exports = flux.createStore({
   }
 });
 
-},{"../actions/AuthActions":208,"../actions/RouterActions":210,"../constants/routes":227,"../constants/views":228,"../utils/api":233,"fluxstream":5,"lodash":33,"moment":35,"route-pattern":198}],233:[function(require,module,exports){
+},{"../actions/AuthActions":208,"../actions/RouterActions":211,"../constants/routes":231,"../constants/views":232,"../utils/api":238,"fluxstream":5,"lodash":33,"moment":35,"route-pattern":198}],238:[function(require,module,exports){
 'use strict';
 
 var Bacon = require('baconjs');
@@ -53002,15 +53349,6 @@ module.exports = {
       return 'data:image/png;base64,' + data;
     }
   },
-  // APPEND WORKOUT TO A DAY
-  createWorkout: function(workout, day) {
-    var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
-    var _workoutsRef = ref.child('workouts');
-    return Bacon.fromCallback(function(workout, sink){
-      var workoutKey =  _dayWorkoutsRef.push(_workoutsRef.push(workout).key()).key();
-      sink(workoutKey);
-    }, workout);
-  },
   getUsernameById: function(userId) {
     var _usernameRef = ref.child('users/'+userId+'/username');
     var username = '';
@@ -53019,6 +53357,15 @@ module.exports = {
       username = snapshot.val();
     });
     return username;
+  },
+  /////////////////////// WORKOUTS ///////////////////////
+  createWorkout: function(workout, day) {
+    var _dayWorkoutsRef = ref.child('days').child(day).child('workouts');
+    var _workoutsRef = ref.child('workouts');
+    return Bacon.fromCallback(function(workout, sink){
+      var workoutKey =  _dayWorkoutsRef.push(_workoutsRef.push(workout).key()).key();
+      sink(workoutKey);
+    }, workout);
   },
   updateWorkout: function(config) {
     if (config && config.key && config.text) {
@@ -53069,10 +53416,72 @@ module.exports = {
         });
       }
     }, config);
-  }
+  },
+  /////////////////////// COMMENTS ///////////////////////
+  createComment: function(comment, workoutId) {
+    var workoutCommentsRef = ref.child('workouts').child(workoutId).child('comments');
+
+    var commentsRef = ref.child('comments');
+
+    return Bacon.fromCallback(function(comment, sink) {
+      var commentKey = workoutCommentsRef.push(commentsRef.push(comment).key()).key();
+
+      sink(commentKey);
+    }, comment);
+  },
+  updateComment: function(config) {
+    if (config && config.key && config.text) {
+      var commentRef = ref.child('comments').child(config.key);
+      return Bacon.fromCallback(function(config, sink) {
+        commentRef.transaction(function(currentData) {
+          var newData = currentData || {};
+          newData.text = config.text;
+          newData.editedTimestamp = config.editedTimestamp;
+          return newData;
+        }, function(error, committed) {
+          if (error) {
+            sink(error);
+          } else if (!committed) {
+            sink(_.extend(new Error(), {key: 'ABORTED_TRANSACTION'}));
+          } else {
+            sink('success');
+          }
+        });
+      }, config);
+    }
+  },
+  deleteComment: function(config) {
+    var workoutCommentsRef = ref.child('workouts').child(config.workoutId).child('workouts');
+    var commentRef = ref.child('workouts').child(config.key);
+    return Bacon.fromCallback(function(sink) {
+      if (config && config.key && config.workoutId) {
+        workoutCommentsRef.transaction(function(currentData) {
+          var newData = currentData;
+          var keyToRemove = _.findKey(newData, function(val) {
+            return val === config.key;
+          });
+          if (keyToRemove) {
+            delete newData[keyToRemove];
+          }
+          return newData;
+        }, function(error, committed) {
+          if (error) {
+            console.log('error', error);
+            sink(error);
+          } else if (!committed) {
+            console.log('aborted transaction');
+            sink(_.extend(new Error(), {key: 'ABORTED_TRANSACTION'}));
+          } else {
+            commentRef.off();
+            commentRef.remove();
+          }
+        });
+      }
+    }, config);
+  },
 };
 
-},{"./identicon":234,"baconjs":1,"firebase":4,"jssha":31,"lodash":33}],234:[function(require,module,exports){
+},{"./identicon":239,"baconjs":1,"firebase":4,"jssha":31,"lodash":33}],239:[function(require,module,exports){
 'use strict';
 
 var PNGlib = require('pnglib');
@@ -53169,7 +53578,7 @@ Identicon.prototype = {
 
 module.exports = Identicon;
 
-},{"pnglib":36}],235:[function(require,module,exports){
+},{"pnglib":36}],240:[function(require,module,exports){
 'use strict';
 
 var Nav = require('../components/Nav.jsx');
@@ -53190,17 +53599,16 @@ var Day = React.createClass({displayName: "Day",
       workouts: {},
       selectedWorkout: {},
       showWorkoutDetails: false,
-      selectedWorkoutExists: true,
-      unsubscribe: {}
+      selectedWorkoutExists: true
     });
   },
   componentDidMount: function() {
     // CREATE A LISTENER FOR A NEW DAY DATA
     var self = this;
-    var unsubscribe = DayStore.streams.workoutsStream.onValue(function(payload) {
+    this.unsubFromWorkoutsStream = DayStore.streams.workoutsStream.onValue(function(payload) {
       // every time workout changes we decide whether to set selectedWorkoutExists to true or not
       var workouts;
-      if (self.isMounted() && payload && payload.action) {
+      if (payload && payload.action) {
         switch (payload.action) {
           case 'REMOVE':
             workouts = self.state.workouts;
@@ -53230,7 +53638,7 @@ var Day = React.createClass({displayName: "Day",
         }
       }
     });
-    this.setState({ workouts: {}, unsubscribe: unsubscribe });
+    this.setState({ workouts: {} });
     // FIRST TIME
     DayActions.setupDayStreams({ day: this.props.params.day });
   },
@@ -53242,7 +53650,7 @@ var Day = React.createClass({displayName: "Day",
     });
   },
   componentWillUnmount: function() {
-    this.state.unsubscribe();
+    this.unsubFromWorkoutsStream();
   },
   hideWorkoutDetails: function() {
     this.setState({
@@ -53265,6 +53673,7 @@ var Day = React.createClass({displayName: "Day",
       );
       workoutDetails = (
         React.createElement(WorkoutDetails, {
+          user: this.props.user, 
           key: this.state.selectedWorkout.key, 
           workout: this.state.selectedWorkout, 
           handleModalClose: this.hideWorkoutDetails, 
@@ -53301,7 +53710,7 @@ var Day = React.createClass({displayName: "Day",
 
 module.exports = Day;
 
-},{"../actions/DayActions":209,"../components/Nav.jsx":214,"../components/Portal.jsx":215,"../components/Scroller.jsx":217,"../components/TimeoutTransitionGroup.jsx":218,"../components/WeekScroller.jsx":219,"../components/WorkoutDetails.jsx":220,"../components/Workouts.jsx":221,"../stores/DayStore":231,"lodash":33}],236:[function(require,module,exports){
+},{"../actions/DayActions":210,"../components/Nav.jsx":217,"../components/Portal.jsx":218,"../components/Scroller.jsx":220,"../components/TimeoutTransitionGroup.jsx":221,"../components/WeekScroller.jsx":222,"../components/WorkoutDetails.jsx":223,"../components/Workouts.jsx":225,"../stores/DayStore":236,"lodash":33}],241:[function(require,module,exports){
 'use strict';
 
 var Icon = require('../components/Icon.jsx');
@@ -53424,7 +53833,7 @@ var Login = React.createClass({displayName: "Login",
 
 module.exports = Login;
 
-},{"../actions/AuthActions":208,"../components/Icon.jsx":212,"../constants/routes":227,"../constants/views":228,"../stores/AuthStore":230}],237:[function(require,module,exports){
+},{"../actions/AuthActions":208,"../components/Icon.jsx":215,"../constants/routes":231,"../constants/views":232,"../stores/AuthStore":234}],242:[function(require,module,exports){
 'use strict';
 
 var Icon = require('../components/Icon.jsx');
@@ -53503,4 +53912,4 @@ var ResetPassword = React.createClass({displayName: "ResetPassword",
 
 module.exports = ResetPassword;
 
-},{"../components/Icon.jsx":212}]},{},[229])
+},{"../components/Icon.jsx":215}]},{},[233])

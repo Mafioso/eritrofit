@@ -2,10 +2,15 @@
 
 var Icon = require('./Icon.jsx');
 var Scroll = require('./Scroll.jsx');
+var Comments = require('./Comments.jsx');
 var CommentForm = require('./CommentForm.jsx');
-var api = require('../utils/api');
-var moment = require('moment');
+var WorkoutDetailsHeader = require('./WorkoutDetailsHeader.jsx');
+var CommentStore = require('../stores/CommentStore');
+var CommentActions = require('../actions/CommentActions');
+// var api = require('../utils/api');
+// var moment = require('moment');
 var Bacon = require('baconjs');
+// var _ = require('lodash');
 
 module.exports = React.createClass({
   closeModal: function(event) {
@@ -19,7 +24,7 @@ module.exports = React.createClass({
   getInitialState: function() {
     return {
       shouldScrollBottom: true,
-      items: []
+      comments: []
     };
   },
   componentWillMount: function() {
@@ -27,6 +32,7 @@ module.exports = React.createClass({
     document.body.className += ' body--stopScroll';
   },
   componentDidMount: function() {
+    //////////////////// SETUP SCROLL ////////////////////
     var scrollable = this.refs.scrollable.getDOMNode();
     var self = this;
 
@@ -46,15 +52,42 @@ module.exports = React.createClass({
     this.scrollableScrollHeightStream.push(scrollable.scrollHeight);
     this.scrollTopStream.push(scrollable.scrollHeight);
 
-    window.addEventListener('resize', this.updateScrollableHeightValue);
+    window.addEventListener('resize', this.updateScrollableConfiguration);
 
-    // this.interval = setInterval(this.addEvent, 500);
+    //////////////////// SETUP COMMENTS ////////////////////
+    this.unsubFromCommentsStream = CommentStore.streams.commentsStream.onValue(function(payload) {
+      var comments;
+      if (payload && payload.action) {
+        switch (payload.action) {
+          case 'REMOVE':
+            comments = self.state.comments;
+            delete comments[payload.key];
+            self.setState({
+              comments: comments
+            });
+            break;
+          case 'PUT':
+            comments = self.state.comments;
+            comments[payload.key] = payload;
+            self.setState({
+              comments: comments
+            });
+            break;
+          default:
+            break;
+        }
+      }
+    });
+    this.setState({ comments: {} });
 
-    // parameters to update when trying to scroll
-    // - translateX     for thumb
-    // - scrollTop      for scrollable area
+    // SETUP
+    CommentActions.setupCommentsStream({ workoutId: this.props.workout.key });
+  },
+  updateScrollableConfiguration: function() {
+    var scrollable = this.refs.scrollable.getDOMNode();
 
-    //
+    this.scrollableHeightStream.push(scrollable.clientHeight);
+    this.scrollableScrollHeightStream.push(scrollable.scrollHeight);
   },
   updateScrollableHeightValue: function() {
     var scrollable = this.refs.scrollable.getDOMNode();
@@ -76,7 +109,7 @@ module.exports = React.createClass({
     // remove class from body
     document.body.className = document.body.className.replace(/\bbody--stopScroll\b/, '');
 
-    window.removeEventListener('resize', this.updateScrollableHeightValue);
+    window.removeEventListener('resize', this.updateScrollableConfiguration);
 
     this.mousePositionStream.push(Bacon.noMore);
     this.wheelStream.push(Bacon.noMore);
@@ -88,24 +121,10 @@ module.exports = React.createClass({
     this.unsubFromMousePositionStream();
     this.unsubFromScrollTopStream();
 
-    clearInterval(this.interval);
+    this.unsubFromCommentsStream();
   },
   render: function() {
-    var userpic = api.getLargeBase64Userpic(this.props.workout.author);
-    var dayTime = new moment(this.props.workout.day, 'DDMMYY');
-    var timestampFormat = 'H:mm';
-    if (!dayTime.isSame(moment(this.props.workout.timestamp), 'day')) {
-      timestampFormat = 'D MMMM H:mm';
-    }
-    var timestamp = moment(this.props.workout.timestamp).format(timestampFormat);
-    if (this.props.workout.editedTimestamp) {
-      timestamp += '*';
-      timestamp = (
-        <span title={'Oтредактировано ' + moment(this.props.workout.editedTimestamp).format('D MMMM в H:mm')}>
-          {timestamp}
-        </span>
-      );
-    }
+
     if (!this.props.selectedWorkoutExists) {
       return (
         <div className='modal-body workoutDetails-container'>
@@ -120,48 +139,38 @@ module.exports = React.createClass({
         </div>
       );
     }
+
     return (
+
       <div className='modal-body workoutDetails-container'>
         <button onClick={this.closeModal} className='workoutDetails-close' type='button'>
           <Icon name='x' />
         </button>
 
         <div className='workoutDetails'>
-          <div className='workoutDetails-header'>
-            <div className='workout-userpic figure-userpic'>
-              <img src={userpic} />
-            </div>
-            <div className='workout'>
-              <div className='workout-meta'>
-                <div className='workout-meta-body'>
-                  <strong className='workout-meta-user'>{this.props.workout.username}</strong>, {timestamp}
-                </div>
-              </div>
-              <div className='workout-body'>
-                {this.props.workout.text}
-              </div>
-            </div>
-          </div>
+          <WorkoutDetailsHeader
+            workout={this.props.workout}
+            />
 
           <div className='workoutDetails-body'>
             <div className='workoutDetails-scrollable' onWheel={this.handleWheel} ref='scrollable'>
 
-              <div style={ { height: '1000px' } } />
-              <ul>
-                {this.state.items.map(function(item) {
-                  return <li key={item}>{item}</li>;
-                })}
-              </ul>
+              <Comments
+                user={this.props.user}
+                items={this.state.comments} />
+
+              <Scroll
+                scrollableHeightStream={this.scrollableHeightStream}
+                scrollableScrollHeightStream={this.scrollableScrollHeightStream}
+                scrollTopStream={this.scrollTopStream}
+                mousePositionStream={this.mousePositionStream} />
             </div>
-            <Scroll
-              scrollableHeightStream={this.scrollableHeightStream}
-              scrollableScrollHeightStream={this.scrollableScrollHeightStream}
-              scrollTopStream={this.scrollTopStream}
-              mousePositionStream={this.mousePositionStream} />
           </div>
 
           <div className='workoutDetails-footer'>
-            <CommentForm />
+            <CommentForm
+              workoutId={this.props.workout.key}
+              user={this.props.user} />
           </div>
         </div>
       </div>
@@ -169,19 +178,5 @@ module.exports = React.createClass({
   },
   handleWheel: function(event) {
     this.wheelStream.push(event.deltaY);
-  },
-  addEvent: function() {
-    var newItems = this.state.items;
-    // either remove or add an item
-    var desiredIndex = Math.floor(Math.random() * newItems.length);
-    newItems.push('Event ' + newItems.length);
-
-    if (desiredIndex % 2 !== 0) {
-      delete newItems[desiredIndex];
-    }
-
-    this.setState({
-      items: newItems
-    });
-  },
+  }
 });
