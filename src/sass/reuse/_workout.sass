@@ -60,6 +60,9 @@
   padding: 0 .5rem .25rem
   white-space: pre-wrap
 
+.workout-text
+  padding-right: 1rem
+
 .workout-footer
   padding: .25rem .5rem .5rem
   text-align: right
@@ -68,7 +71,7 @@
 
 .workout-submit,
 .workout-delete,
-.workout-preDelete
+.workout-button
   display: inline-block
   color: $color-white
   background-color: $color-awesome
@@ -79,7 +82,6 @@
   &:disabled
     opacity: .5
     cursor: default
-    background-color: $color-awesome-vivid
 
 .workout-add
   margin: auto
@@ -106,7 +108,7 @@
   padding: .5rem .25rem .5rem .5rem
 
 .workout-delete,
-.workout-preDelete
+.workout-button
   background-color: $color-danger
   margin-right: 1rem
   &:hover
@@ -116,7 +118,7 @@
     width: 1.25rem
     height: 1.25rem
 
-.workout-preDelete
+.workout-button
   background-color: $color-secondary
   &:hover
     background-color: $color-secondary

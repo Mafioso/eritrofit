@@ -1,19 +1,15 @@
 'use strict';
 
 var Permit = React.createClass({
-  _render: true,
-  // PROPS
-  // userId
-  // requiredStatus
-  componentWillMount: function() {
-    // check for rights here
+  propTypes:{
+    validate: React.PropTypes.func.isRequired
   },
   render: function() {
-    var children = null;
-    if (this._render) {
-      children = this.props.children;
+    if (this.props.validate()) {
+      return this.props.children;
+    } else {
+      return null;
     }
-    return (children);
   }
 });
 

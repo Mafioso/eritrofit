@@ -14,7 +14,7 @@ var Bacon = require('baconjs');
 
 module.exports = React.createClass({
   closeModal: function(event) {
-    this.props.handleModalClose(event);
+    this.props.closeModal(event);
   },
   scrollTopStream: new Bacon.Bus(),
   mousePositionStream: new Bacon.Bus(),
@@ -24,7 +24,7 @@ module.exports = React.createClass({
   getInitialState: function() {
     return {
       shouldScrollBottom: true,
-      comments: []
+      comments: {}
     };
   },
   componentWillMount: function() {
@@ -37,10 +37,12 @@ module.exports = React.createClass({
     var self = this;
 
     this.unsubFromWheelStream = this.wheelStream.onValue(function(value) {
+      self.shouldScrollBottom = scrollable.scrollTop + scrollable.offsetHeight === scrollable.scrollHeight;
       self.scrollTopStream.push(scrollable.scrollTop + value);
     });
 
     this.unsubFromMousePositionStream = this.mousePositionStream.onValue(function(value) {
+      self.shouldScrollBottom = scrollable.scrollTop + scrollable.offsetHeight === scrollable.scrollHeight;
       self.scrollTopStream.push(value);
     });
 
@@ -48,7 +50,7 @@ module.exports = React.createClass({
       scrollable.scrollTop = value;
     });
 
-    this.scrollableHeightStream.push(scrollable.clientHeight);
+    this.scrollableHeightStream.push(scrollable.offsetHeight);
     this.scrollableScrollHeightStream.push(scrollable.scrollHeight);
     this.scrollTopStream.push(scrollable.scrollHeight);
 
@@ -86,12 +88,18 @@ module.exports = React.createClass({
   updateScrollableConfiguration: function() {
     var scrollable = this.refs.scrollable.getDOMNode();
 
-    this.scrollableHeightStream.push(scrollable.clientHeight);
+    this.scrollableHeightStream.push(scrollable.offsetHeight);
     this.scrollableScrollHeightStream.push(scrollable.scrollHeight);
+
+    if (this.shouldScrollBottom) {
+      this.scrollTopStream.push(scrollable.scrollHeight);
+    } else {
+      this.scrollTopStream.push(scrollable.scrollTop);
+    }
   },
   updateScrollableHeightValue: function() {
     var scrollable = this.refs.scrollable.getDOMNode();
-    this.scrollableHeightStream.push(scrollable.clientHeight);
+    this.scrollableHeightStream.push(scrollable.offsetHeight);
   },
   componentWillUpdate: function(nextProps, nextState) {
     var scrollable = this.refs.scrollable.getDOMNode();

@@ -23,23 +23,27 @@ var CommentForm = React.createClass({
     if (event.keyCode === ENTER_KEY_CODE) {
       event.preventDefault();
 
-      var inputValue = this.state.text;
-      if (!inputValue) {
-        return;
-      }
-
-      this.setState({
-        submitting: true
-      });
-
-      CommentActions.createComment({
-        text: inputValue,
-        workoutId: this.props.workoutId,
-        user: this.props.user,
-        timestamp: moment().utc().format()
-      });
-
+      this.submitChatMessage(event);
     }
+  },
+  submitChatMessage: function(event) {
+    event.preventDefault();
+
+    var inputValue = this.state.text;
+    if (!inputValue) {
+      return;
+    }
+
+    this.setState({
+      submitting: true
+    });
+
+    CommentActions.createComment({
+      text: inputValue,
+      workoutId: this.props.workoutId,
+      user: this.props.user,
+      timestamp: moment().utc().format()
+    });
   },
   componentDidMount: function() {
     var self = this;
@@ -55,7 +59,7 @@ var CommentForm = React.createClass({
   },
   render: function() {
     return (
-      <form className='chatForm'>
+      <form onSubmit={this.submitChatMessage} className='chatForm'>
         <InputTextarea
           disabled={this.state.submitting}
           name='chat_textarea'

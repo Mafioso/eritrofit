@@ -15,11 +15,11 @@ var Scroll = React.createClass({
     event.stopPropagation();
 
     var deltaY = event.pageY - this.mouseMoveInitialPageY;
-    var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().clientHeight;
+    var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().offsetHeight;
     // deltaY - amount of mouse drag from the drag start
     // mouseMoveInitialOffset - distance from top of the scroll to the drag start
     // so mouseMoveInitialOffset + deltaY should define the new scrollTop
-    // the scale is this.scrollableScrollHeight / this.refs.scroll.getDOMNode.clientHeight
+    // the scale is this.scrollableScrollHeight / this.refs.scroll.getDOMNode.offsetHeight
     this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY)));
   },
   handleTouchStart: function(event) {
@@ -30,7 +30,7 @@ var Scroll = React.createClass({
 
       // send initial value to mouse position stream
       var deltaY = event.pageY - this.mouseMoveInitialPageY;
-      var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().clientHeight;
+      var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().offsetHeight;
       this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY)));
     }
   },
@@ -59,7 +59,7 @@ var Scroll = React.createClass({
 
     // send initial value to mouse position stream
     var deltaY = event.pageY - this.mouseMoveInitialPageY;
-    var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().clientHeight;
+    var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().offsetHeight;
     this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY)));
 
     // attach event listeners
@@ -75,7 +75,7 @@ var Scroll = React.createClass({
   },
   updateThumbState: function(scrollableHeight, scrollableScrollHeight, scrollTop) {
     if (scrollableHeight <= scrollableScrollHeight) {
-      var scrollHeight = this.refs.scroll.getDOMNode().clientHeight;
+      var scrollHeight = this.refs.scroll.getDOMNode().offsetHeight;
       var thumbHeight = Math.floor( scrollHeight * (scrollableHeight / scrollableScrollHeight));
       var thumbOffset = Math.floor(scrollTop * scrollableHeight / scrollableScrollHeight);
       var stickToBottom = false;

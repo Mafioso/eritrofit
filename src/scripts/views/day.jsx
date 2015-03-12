@@ -6,6 +6,7 @@ var WeekScroller = require('../components/WeekScroller.jsx');
 var Workouts = require('../components/Workouts.jsx');
 var Portal = require('../components/Portal.jsx');
 var WorkoutDetails = require('../components/WorkoutDetails.jsx');
+var WorkoutResultSubmit = require('../components/WorkoutResultSubmit.jsx');
 var TimeoutTransitionGroup = require('../components/TimeoutTransitionGroup.jsx');
 var DayActions = require('../actions/DayActions');
 var DayStore = require('../stores/DayStore');
@@ -15,6 +16,7 @@ var _ = require('lodash');
 var Day = React.createClass({
   getInitialState: function() {
     return({
+      mode: '',
       workouts: {},
       selectedWorkout: {},
       showWorkoutDetails: false,
@@ -71,34 +73,66 @@ var Day = React.createClass({
   componentWillUnmount: function() {
     this.unsubFromWorkoutsStream();
   },
-  hideWorkoutDetails: function() {
+  hideModal: function() {
     this.setState({
-      showWorkoutDetails: false
+      mode: ''
     });
   },
-  handleShowWorkoutDetails: function(workout) {
-    this.setState({ selectedWorkout: workout, showWorkoutDetails: true, selectedWorkoutExists: true });
+  showWorkoutDetails: function(workout) {
+    this.setState({ selectedWorkout: workout, mode: 'DETAIL', selectedWorkoutExists: true });
+  },
+  showSubmit: function(workout) {
+    this.setState({ selectedWorkout: workout, mode: 'SUBMIT', selectedWorkoutExists: true });
   },
   render: function() {
-    // don't mount workout details, if showWorkoutDetails is false
-    var workoutDetailsBackdrop;
-    var workoutDetails;
-    if (this.state.showWorkoutDetails && this.state.selectedWorkout) {
-      workoutDetailsBackdrop = (
-        <div
+
+    var detailPortal = {
+      backdrop: null,
+      modal: null
+    };
+
+    var submitPortal = {
+      backdrop: null,
+      modal: null
+    };
+
+    switch (this.state.mode) {
+      case 'DETAIL':
+        detailPortal.backdrop = <div
           key='modal-backrop'
-          onClick={this.hideWorkoutDetails}
-          className='modal-backdrop workoutDetails-backdrop' />
-      );
-      workoutDetails = (
-        <WorkoutDetails
+          onClick={this.hideModal}
+          className='modal-backdrop workoutDetails-backdrop' />;
+        detailPortal.modal = <WorkoutDetails
           user={this.props.user}
           key={this.state.selectedWorkout.key}
           workout={this.state.selectedWorkout}
-          handleModalClose={this.hideWorkoutDetails}
-          selectedWorkoutExists={this.state.selectedWorkoutExists} />
-      );
+          closeModal={this.hideModal}
+          selectedWorkoutExists={this.state.selectedWorkoutExists} />;
+        break;
+      case 'SUBMIT':
+        submitPortal.backdrop = <div
+          key='modal-backrop'
+          onClick={this.hideModal}
+          className='modal-backdrop workoutResultSubmit-backdrop' />;
+        submitPortal.modal = <WorkoutResultSubmit
+          user={this.props.user}
+          key={this.state.selectedWorkout.key}
+          workout={this.state.selectedWorkout}
+          closeModal={this.hideModal} />;
+        break;
+      default:
+        detailPortal = {
+          backdrop: null,
+          modal: null
+        };
+
+        submitPortal = {
+          backdrop: null,
+          modal: null
+        };
+        break;
     }
+
     return (
       <div>
         <Nav
@@ -109,19 +143,28 @@ var Day = React.createClass({
         <Scroller
           day={this.props.params.day} />
         <Workouts
-          onShowWorkoutDetails={this.handleShowWorkoutDetails}
+          showSubmit={this.showSubmit}
+          showWorkoutDetails={this.showWorkoutDetails}
           user={this.props.user}
           username={this.props.username}
           items={this.state.workouts}
           day={this.props.params.day} />
-        <Portal>
-          <TimeoutTransitionGroup enterTimeout={150} leaveTimeout={150} component='div' transitionName='workoutDetailsBackdropTransition'>
-            {workoutDetailsBackdrop}
-          </TimeoutTransitionGroup>
-          <TimeoutTransitionGroup enterTimeout={250} leaveTimeout={100} component='div' transitionName='workoutDetailsTransition'>
-            {workoutDetails}
-          </TimeoutTransitionGroup>
-        </Portal>
+          <Portal>
+            <TimeoutTransitionGroup enterTimeout={100} leaveTimeout={150} component='div' transitionName='workoutDetailsBackdropTransition'>
+              {detailPortal.backdrop}
+            </TimeoutTransitionGroup>
+            <TimeoutTransitionGroup enterTimeout={150} leaveTimeout={100} component='div' transitionName='workoutDetailsTransition'>
+              {detailPortal.modal}
+            </TimeoutTransitionGroup>
+          </Portal>
+          <Portal>
+            <TimeoutTransitionGroup enterTimeout={100} leaveTimeout={150} component='div' transitionName='workoutResultSubmitBackdropTransition'>
+              {submitPortal.backdrop}
+            </TimeoutTransitionGroup>
+            <TimeoutTransitionGroup enterTimeout={150} leaveTimeout={100} component='div' transitionName='workoutResultSubmitTransition'>
+              {submitPortal.modal}
+            </TimeoutTransitionGroup>
+          </Portal>
       </div>
     );
   }

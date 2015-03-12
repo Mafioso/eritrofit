@@ -2,20 +2,20 @@
 
 var WorkoutsForm = require('./workoutsForm.jsx');
 var WorkoutsItem = require('./workoutsItem.jsx');
-var Permit = require('./permit.jsx');
+// var Permit = require('./permit.jsx');
 // var DayActions = require('../actions/DayActions');
 // var DayStore = require('../stores/DayStore');
 var _ = require('lodash');
 var moment = require('moment');
 
 var Workouts = React.createClass({
-  getInitialState: function() {
-    return ({
-
-    });
-  },
-  handleShowWorkoutDetails: function(workout) {
-    this.props.onShowWorkoutDetails(workout);
+  propTypes: {
+    showSubmit: React.PropTypes.func,
+    showWorkoutDetails: React.PropTypes.func,
+    user: React.PropTypes.string,
+    username: React.PropTypes.string,
+    items: React.PropTypes.object,
+    day: React.PropTypes.string,
   },
   render: function() {
     var self = this;
@@ -28,7 +28,8 @@ var Workouts = React.createClass({
       return (
         <WorkoutsItem
           key={workout.key}
-          onShowWorkoutDetails={self.handleShowWorkoutDetails}
+          showSubmit={self.props.showSubmit}
+          showWorkoutDetails={self.props.showWorkoutDetails}
           day={self.props.day}
           user={self.props.user}
           workout={workout} />
@@ -39,12 +40,10 @@ var Workouts = React.createClass({
         <ul className='workouts'>
           {workouts}
         </ul>
-        <Permit user={this.props.user} status='sudo'>
-          <WorkoutsForm
-            user={self.props.user}
-            username={self.props.username}
-            day={this.props.day} />
-        </Permit>
+        <WorkoutsForm
+          user={self.props.user}
+          username={self.props.username}
+          day={this.props.day} />
       </div>
     );
   }

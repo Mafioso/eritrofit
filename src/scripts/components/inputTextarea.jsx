@@ -1,17 +1,24 @@
 'use strict';
 
+var isMobile = require('is-mobile');
+
 var InputTextarea = React.createClass({
   handleChange: function(event) {
     this.props.onTextChange(event.target.value);
   },
   componentDidMount: function() {
-    if (this.props.autoFocus) {
+    if (!isMobile() && this.props.autoFocus) {
       this.refs[this.props.name].getDOMNode().select();
     }
   },
   handleKeyDown: function(event) {
     if (this.props.onKeyDown) {
       this.props.onKeyDown(event);
+    }
+  },
+  handleKeyUp: function(event) {
+    if (this.props.onKeyUp) {
+      this.props.onKeyUp(event);
     }
   },
   componentWillReceiveProps: function(nextProps) {
@@ -27,13 +34,14 @@ var InputTextarea = React.createClass({
         </div>
         <textarea
           disabled={this.props.submitting || false}
-          defaultValue={this.props.text}
+          value={this.props.text}
           ref={this.props.name}
-          autoFocus={this.props.autoFocus}
+          autoFocus={!isMobile() && this.props.autoFocus}
           className='input-field'
           placeholder={this.props.placeholder}
           onChange={this.handleChange}
-          onKeyDown={this.handleKeyDown} />
+          onKeyDown={this.handleKeyDown}
+          onKeyUp={this.handleKeyUp} />
       </div>
     );
   }
