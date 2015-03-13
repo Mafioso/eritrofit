@@ -51334,6 +51334,7 @@ var CommentForm = React.createClass({displayName: "CommentForm",
     });
 
     CommentActions.createComment({
+      type: 'COMMENT',
       text: inputValue,
       workoutId: this.props.workoutId,
       user: this.props.user,
@@ -52169,11 +52170,6 @@ module.exports = React.createClass({displayName: "exports",
   closeModal: function(event) {
     this.props.closeModal(event);
   },
-  scrollTopStream: new Bacon.Bus(),
-  mousePositionStream: new Bacon.Bus(),
-  wheelStream: new Bacon.Bus(),
-  scrollableHeightStream: new Bacon.Bus(),
-  scrollableScrollHeightStream: new Bacon.Bus(),
   getInitialState: function() {
     return {
       shouldScrollBottom: true,
@@ -52183,8 +52179,14 @@ module.exports = React.createClass({displayName: "exports",
   componentWillMount: function() {
     // add class to body
     document.body.className += ' body--stopScroll';
+    this.scrollTopStream = new Bacon.Bus();
+    this.mousePositionStream = new Bacon.Bus();
+    this.wheelStream = new Bacon.Bus();
+    this.scrollableHeightStream = new Bacon.Bus();
+    this.scrollableScrollHeightStream = new Bacon.Bus();
   },
   componentDidMount: function() {
+
     //////////////////// SETUP SCROLL ////////////////////
     var scrollable = this.refs.scrollable.getDOMNode();
     var self = this;
@@ -52254,7 +52256,7 @@ module.exports = React.createClass({displayName: "exports",
     var scrollable = this.refs.scrollable.getDOMNode();
     this.scrollableHeightStream.push(scrollable.offsetHeight);
   },
-  componentWillUpdate: function(nextProps, nextState) {
+  componentWillUpdate: function() {
     var scrollable = this.refs.scrollable.getDOMNode();
     var shouldScrollBottom = scrollable.scrollTop + scrollable.offsetHeight === scrollable.scrollHeight;
     this.shouldScrollBottom = shouldScrollBottom;
@@ -52272,17 +52274,18 @@ module.exports = React.createClass({displayName: "exports",
 
     window.removeEventListener('resize', this.updateScrollableConfiguration);
 
-    this.mousePositionStream.push(Bacon.noMore);
-    this.wheelStream.push(Bacon.noMore);
-    this.scrollTopStream.push(Bacon.noMore);
-    this.scrollableHeightStream.push(Bacon.noMore);
-    this.scrollableScrollHeightStream.push(Bacon.noMore);
-
     this.unsubFromWheelStream();
     this.unsubFromMousePositionStream();
     this.unsubFromScrollTopStream();
 
     this.unsubFromCommentsStream();
+
+    this.scrollTopStream.end();
+    this.mousePositionStream.end();
+    this.wheelStream.end();
+    this.scrollableHeightStream.end();
+    this.scrollableScrollHeightStream.end();
+
   },
   render: function() {
 
@@ -52416,6 +52419,10 @@ module.exports = WorkoutDetailsHeader;
 
 var Icon = require('./Icon.jsx');
 var InputTextarea = require('./InputTextarea.jsx');
+var CommentStore = require('../stores/CommentStore');
+var CommentActions = require('../actions/CommentActions');
+var Bacon = require('baconjs');
+var moment = require('moment');
 var _ = require('lodash');
 
 var ENTER_KEY_CODE = 13;
@@ -52424,6 +52431,7 @@ var WorkoutResultSubmit = React.createClass({displayName: "WorkoutResultSubmit",
   getInitialState: function() {
     return {
       mode: 'DEFAULT', // others are 'ERROR' and 'SUCCESS',
+      submitting: false,
       beats: [],
       text: ''
     };
@@ -52431,8 +52439,43 @@ var WorkoutResultSubmit = React.createClass({displayName: "WorkoutResultSubmit",
   componentWillMount: function() {
     document.body.className += ' body--stopScroll';
   },
+  componentDidMount: function() {
+    var self = this;
+
+    this.modalCloseStream = new Bacon.Bus();
+    this.throttledModalCloseStream = this.modalCloseStream.throttle(500);
+
+    this.unsubFromThrottledModalCloseStream = this.throttledModalCloseStream.onValue(function(payload) {
+      if (payload === Bacon.next) {
+        self.props.closeModal();
+      }
+    });
+
+    this.unsubFromCreateCommentSuccess = CommentStore.streams.createCommentSuccess.onValue(function(payload) {
+
+      if (payload) {
+
+        self.setState({
+          mode: 'SUCCESS',
+          submitting: true
+        });
+
+        // so that next time we'll skip value saved in createCommentSuccess stream
+        CommentActions.createCommentSuccess(null);
+        self.modalCloseStream.push(Bacon.next);
+      }
+
+    });
+
+  },
   componentWillUnmount: function() {
     document.body.className = document.body.className.replace(/\bbody--stopScroll\b/, '');
+    if (this.succesTimeout) {
+      window.clearTimeout(this.succesTimeout);
+    }
+    this.modalCloseStream.end();
+    this.unsubFromThrottledModalCloseStream();
+    this.unsubFromCreateCommentSuccess();
   },
   updateText: function(text) {
     this.setState({
@@ -52453,7 +52496,7 @@ var WorkoutResultSubmit = React.createClass({displayName: "WorkoutResultSubmit",
     if (event.keyCode === ENTER_KEY_CODE) {
       event.preventDefault();
 
-      // this.submitResult(event);
+      this.submitResult(event);
     }
   },
   getBeats: function(text) {
@@ -52504,15 +52547,24 @@ var WorkoutResultSubmit = React.createClass({displayName: "WorkoutResultSubmit",
   },
   submitResult: function(event) {
     event.preventDefault();
-    // test string 140max 120avg saldfkjsadf dslfj1 dkfj 1 123.123 123/123 124214.2 21421,212
+
+    this.setState({
+      submitting: true
+    });
+
+    CommentActions.createComment({
+      type: 'SUBMISSION',
+      text: this.state.text,
+      workoutId: this.props.workout.key,
+      user: this.props.user,
+      timestamp: moment().utc().format()
+    });
 
   },
   render: function() {
-    // var bpm = this.state.avgHeartBeat > 0 ? this.state.avgHeartBeat : this.state.defaultBeat;
-    var bpm = this.state.beats.length > 0 ? _.min(this.state.beats) : 60;
+    var avgBPM = _.min(this.state.beats);
 
-    console.log(bpm);
-
+    var bpm = this.state.beats.length > 0 ? avgBPM : 60;
     var animationConfig = 'heartBeat ' + 60000/bpm + 'ms linear infinite';
     var heartBeat = {
       animation: animationConfig,
@@ -52521,9 +52573,17 @@ var WorkoutResultSubmit = React.createClass({displayName: "WorkoutResultSubmit",
       OAnimation: animationConfig,
     };
     // FORCE A REFLOW HERE
-    var heartBeatNode = React.createElement("span", {className: "heartBeatAnimationContainer", key: 'heartBeat-' + bpm, style: heartBeat}, 
+    var heartBeatNode = React.createElement("span", {className: "heartBeatAnimationContainer", key: 'beats-' + bpm, style: heartBeat}, 
       React.createElement(Icon, {name: "heart"})
     );
+
+    switch(this.state.mode) {
+      case 'SUCCESS':
+        break;
+      default:
+        break;
+    }
+
     return (
       React.createElement("div", {className: "workoutResultSubmit-container"}, 
         React.createElement("div", {onClick: this.props.closeModal, className: "workoutResultSubmit-backdrop"}), 
@@ -52534,10 +52594,10 @@ var WorkoutResultSubmit = React.createClass({displayName: "WorkoutResultSubmit",
             ), 
 
             heartBeatNode
-
           ), 
           React.createElement("div", {className: "workoutResultSubmit-body"}, 
             React.createElement(InputTextarea, {
+              disable: this.state.submitting, 
               name: "workoutSubmitInput", 
               autoFocus: true, 
               text: this.state.text, 
@@ -52547,7 +52607,7 @@ var WorkoutResultSubmit = React.createClass({displayName: "WorkoutResultSubmit",
               placeholder: "Пульс и результат"})
           ), 
           React.createElement("div", {className: "workoutResultSubmit-footer"}, 
-            React.createElement("button", {className: "workoutResultSubmit-submit", type: "submit"}, 
+            React.createElement("button", {disabled: this.state.submitting, className: "workoutResultSubmit-submit", type: "submit"}, 
               "Сохранить"
             )
           )
@@ -52559,7 +52619,7 @@ var WorkoutResultSubmit = React.createClass({displayName: "WorkoutResultSubmit",
 
 module.exports = WorkoutResultSubmit;
 
-},{"./Icon.jsx":216,"./InputTextarea.jsx":217,"lodash":34}],228:[function(require,module,exports){
+},{"../actions/CommentActions":210,"../stores/CommentStore":236,"./Icon.jsx":216,"./InputTextarea.jsx":217,"baconjs":1,"lodash":34,"moment":36}],228:[function(require,module,exports){
 'use strict';
 
 var WorkoutsForm = require('./workoutsForm.jsx');
@@ -53311,11 +53371,12 @@ var CommentStore = flux.createStore({
       // 2. author id
       // 3. text
       // 4. workout
-      if (payload.timestamp && payload.user && payload.text && payload.workoutId) {
+      if (payload.timestamp && payload.user && payload.text && payload.workoutId && payload.type) {
         var createComment = api.createComment({
           timestamp: payload.timestamp,
           author: payload.user,
-          text: payload.text
+          text: payload.text,
+          type: payload.type
         }, payload.workoutId);
         createComment.onValue(function(payload) {
           CommentActions.createCommentSuccess(payload);
@@ -53712,14 +53773,19 @@ module.exports = {
   },
   /////////////////////// COMMENTS ///////////////////////
   createComment: function(comment, workoutId) {
-    var workoutCommentsRef = ref.child('workouts').child(workoutId).child('comments');
-
+    var workoutsRef = ref.child('workouts').child(workoutId).child('comments');
+    var submissionsRef = ref.child('workouts').child(workoutId).child('submissions');
     var commentsRef = ref.child('comments');
 
     return Bacon.fromCallback(function(comment, sink) {
-      var commentKey = workoutCommentsRef.push(commentsRef.push(comment).key()).key();
+      var commentKey = commentsRef.push(comment).key();
+      var commentRefKey = workoutsRef.push(commentKey).key();
+      var submissionRefKey;
+      if (comment.type === 'SUBMISSION') {
+        submissionRefKey = submissionsRef.push(commentKey).key();
+      }
 
-      sink(commentKey);
+      sink({commentKey: commentKey, commentRefKey: commentRefKey, sumissionRefKey: submissionRefKey});
     }, comment);
   },
   updateComment: function(config) {

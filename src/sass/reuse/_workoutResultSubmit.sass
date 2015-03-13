@@ -28,6 +28,7 @@
   overflow: hidden
 
 .workoutResultSubmit-header
+  position: relative
   color: $color-white
   padding: 2rem 1rem
   text-align: center
@@ -37,6 +38,21 @@
   .icon--heart
     height: 2.5rem
     width: 2.5rem
+
+.workoutResultSubmit-avg,
+.workoutResultSubmit-max
+  position: absolute
+  font-size: $size-large
+  line-height: 2rem
+  width: 50%
+  top: 50%
+  left: 0
+  text-align: center
+  margin-top: -1rem
+
+.workoutResultSubmit-max
+  left: auto
+  right: 0
 
 .workoutResultSubmit-close
   position: absolute
@@ -72,6 +88,8 @@
   background-color: $color-positive
   color: $color-white
   border-radius: $radius-small
+  &:disabled
+    opacity: .5
 
 .workoutResultSubmitTransition-enter
   .workoutResultSubmit

@@ -2,6 +2,10 @@
 
 var Icon = require('./Icon.jsx');
 var InputTextarea = require('./InputTextarea.jsx');
+var CommentStore = require('../stores/CommentStore');
+var CommentActions = require('../actions/CommentActions');
+var Bacon = require('baconjs');
+var moment = require('moment');
 var _ = require('lodash');
 
 var ENTER_KEY_CODE = 13;
@@ -10,6 +14,7 @@ var WorkoutResultSubmit = React.createClass({
   getInitialState: function() {
     return {
       mode: 'DEFAULT', // others are 'ERROR' and 'SUCCESS',
+      submitting: false,
       beats: [],
       text: ''
     };
@@ -17,8 +22,43 @@ var WorkoutResultSubmit = React.createClass({
   componentWillMount: function() {
     document.body.className += ' body--stopScroll';
   },
+  componentDidMount: function() {
+    var self = this;
+
+    this.modalCloseStream = new Bacon.Bus();
+    this.throttledModalCloseStream = this.modalCloseStream.throttle(500);
+
+    this.unsubFromThrottledModalCloseStream = this.throttledModalCloseStream.onValue(function(payload) {
+      if (payload === Bacon.next) {
+        self.props.closeModal();
+      }
+    });
+
+    this.unsubFromCreateCommentSuccess = CommentStore.streams.createCommentSuccess.onValue(function(payload) {
+
+      if (payload) {
+
+        self.setState({
+          mode: 'SUCCESS',
+          submitting: true
+        });
+
+        // so that next time we'll skip value saved in createCommentSuccess stream
+        CommentActions.createCommentSuccess(null);
+        self.modalCloseStream.push(Bacon.next);
+      }
+
+    });
+
+  },
   componentWillUnmount: function() {
     document.body.className = document.body.className.replace(/\bbody--stopScroll\b/, '');
+    if (this.succesTimeout) {
+      window.clearTimeout(this.succesTimeout);
+    }
+    this.modalCloseStream.end();
+    this.unsubFromThrottledModalCloseStream();
+    this.unsubFromCreateCommentSuccess();
   },
   updateText: function(text) {
     this.setState({
@@ -39,7 +79,7 @@ var WorkoutResultSubmit = React.createClass({
     if (event.keyCode === ENTER_KEY_CODE) {
       event.preventDefault();
 
-      // this.submitResult(event);
+      this.submitResult(event);
     }
   },
   getBeats: function(text) {
@@ -90,15 +130,24 @@ var WorkoutResultSubmit = React.createClass({
   },
   submitResult: function(event) {
     event.preventDefault();
-    // test string 140max 120avg saldfkjsadf dslfj1 dkfj 1 123.123 123/123 124214.2 21421,212
+
+    this.setState({
+      submitting: true
+    });
+
+    CommentActions.createComment({
+      type: 'SUBMISSION',
+      text: this.state.text,
+      workoutId: this.props.workout.key,
+      user: this.props.user,
+      timestamp: moment().utc().format()
+    });
 
   },
   render: function() {
-    // var bpm = this.state.avgHeartBeat > 0 ? this.state.avgHeartBeat : this.state.defaultBeat;
-    var bpm = this.state.beats.length > 0 ? _.min(this.state.beats) : 60;
+    var avgBPM = _.min(this.state.beats);
 
-    console.log(bpm);
-
+    var bpm = this.state.beats.length > 0 ? avgBPM : 60;
     var animationConfig = 'heartBeat ' + 60000/bpm + 'ms linear infinite';
     var heartBeat = {
       animation: animationConfig,
@@ -107,9 +156,17 @@ var WorkoutResultSubmit = React.createClass({
       OAnimation: animationConfig,
     };
     // FORCE A REFLOW HERE
-    var heartBeatNode = <span className='heartBeatAnimationContainer' key={'heartBeat-' + bpm} style={heartBeat}>
+    var heartBeatNode = <span className='heartBeatAnimationContainer' key={'beats-' + bpm} style={heartBeat}>
       <Icon name='heart' />
     </span>;
+
+    switch(this.state.mode) {
+      case 'SUCCESS':
+        break;
+      default:
+        break;
+    }
+
     return (
       <div className='workoutResultSubmit-container'>
         <div onClick={this.props.closeModal} className='workoutResultSubmit-backdrop'></div>
@@ -120,10 +177,10 @@ var WorkoutResultSubmit = React.createClass({
             </button>
 
             {heartBeatNode}
-
           </div>
           <div className='workoutResultSubmit-body'>
             <InputTextarea
+              disable={this.state.submitting}
               name='workoutSubmitInput'
               autoFocus={true}
               text={this.state.text}
@@ -133,7 +190,7 @@ var WorkoutResultSubmit = React.createClass({
               placeholder='Пульс и результат' />
           </div>
           <div className='workoutResultSubmit-footer'>
-            <button className='workoutResultSubmit-submit' type='submit'>
+            <button disabled={this.state.submitting} className='workoutResultSubmit-submit' type='submit'>
               Сохранить
             </button>
           </div>

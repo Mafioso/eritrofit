@@ -78,11 +78,12 @@ var CommentStore = flux.createStore({
       // 2. author id
       // 3. text
       // 4. workout
-      if (payload.timestamp && payload.user && payload.text && payload.workoutId) {
+      if (payload.timestamp && payload.user && payload.text && payload.workoutId && payload.type) {
         var createComment = api.createComment({
           timestamp: payload.timestamp,
           author: payload.user,
-          text: payload.text
+          text: payload.text,
+          type: payload.type
         }, payload.workoutId);
         createComment.onValue(function(payload) {
           CommentActions.createCommentSuccess(payload);

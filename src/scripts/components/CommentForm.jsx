@@ -39,6 +39,7 @@ var CommentForm = React.createClass({
     });
 
     CommentActions.createComment({
+      type: 'COMMENT',
       text: inputValue,
       workoutId: this.props.workoutId,
       user: this.props.user,

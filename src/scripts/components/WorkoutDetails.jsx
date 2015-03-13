@@ -16,11 +16,6 @@ module.exports = React.createClass({
   closeModal: function(event) {
     this.props.closeModal(event);
   },
-  scrollTopStream: new Bacon.Bus(),
-  mousePositionStream: new Bacon.Bus(),
-  wheelStream: new Bacon.Bus(),
-  scrollableHeightStream: new Bacon.Bus(),
-  scrollableScrollHeightStream: new Bacon.Bus(),
   getInitialState: function() {
     return {
       shouldScrollBottom: true,
@@ -30,8 +25,14 @@ module.exports = React.createClass({
   componentWillMount: function() {
     // add class to body
     document.body.className += ' body--stopScroll';
+    this.scrollTopStream = new Bacon.Bus();
+    this.mousePositionStream = new Bacon.Bus();
+    this.wheelStream = new Bacon.Bus();
+    this.scrollableHeightStream = new Bacon.Bus();
+    this.scrollableScrollHeightStream = new Bacon.Bus();
   },
   componentDidMount: function() {
+
     //////////////////// SETUP SCROLL ////////////////////
     var scrollable = this.refs.scrollable.getDOMNode();
     var self = this;
@@ -101,7 +102,7 @@ module.exports = React.createClass({
     var scrollable = this.refs.scrollable.getDOMNode();
     this.scrollableHeightStream.push(scrollable.offsetHeight);
   },
-  componentWillUpdate: function(nextProps, nextState) {
+  componentWillUpdate: function() {
     var scrollable = this.refs.scrollable.getDOMNode();
     var shouldScrollBottom = scrollable.scrollTop + scrollable.offsetHeight === scrollable.scrollHeight;
     this.shouldScrollBottom = shouldScrollBottom;
@@ -119,17 +120,18 @@ module.exports = React.createClass({
 
     window.removeEventListener('resize', this.updateScrollableConfiguration);
 
-    this.mousePositionStream.push(Bacon.noMore);
-    this.wheelStream.push(Bacon.noMore);
-    this.scrollTopStream.push(Bacon.noMore);
-    this.scrollableHeightStream.push(Bacon.noMore);
-    this.scrollableScrollHeightStream.push(Bacon.noMore);
-
     this.unsubFromWheelStream();
     this.unsubFromMousePositionStream();
     this.unsubFromScrollTopStream();
 
     this.unsubFromCommentsStream();
+
+    this.scrollTopStream.end();
+    this.mousePositionStream.end();
+    this.wheelStream.end();
+    this.scrollableHeightStream.end();
+    this.scrollableScrollHeightStream.end();
+
   },
   render: function() {
 

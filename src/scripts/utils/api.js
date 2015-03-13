@@ -144,14 +144,19 @@ module.exports = {
   },
   /////////////////////// COMMENTS ///////////////////////
   createComment: function(comment, workoutId) {
-    var workoutCommentsRef = ref.child('workouts').child(workoutId).child('comments');
-
+    var workoutsRef = ref.child('workouts').child(workoutId).child('comments');
+    var submissionsRef = ref.child('workouts').child(workoutId).child('submissions');
     var commentsRef = ref.child('comments');
 
     return Bacon.fromCallback(function(comment, sink) {
-      var commentKey = workoutCommentsRef.push(commentsRef.push(comment).key()).key();
+      var commentKey = commentsRef.push(comment).key();
+      var commentRefKey = workoutsRef.push(commentKey).key();
+      var submissionRefKey;
+      if (comment.type === 'SUBMISSION') {
+        submissionRefKey = submissionsRef.push(commentKey).key();
+      }
 
-      sink(commentKey);
+      sink({commentKey: commentKey, commentRefKey: commentRefKey, sumissionRefKey: submissionRefKey});
     }, comment);
   },
   updateComment: function(config) {
