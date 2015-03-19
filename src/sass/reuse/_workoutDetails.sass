@@ -47,7 +47,8 @@
 .workoutDetails-header
   @extend %helper-accelerate
   display: flex
-  padding: 1rem
+  margin: 1rem 1.5rem 1rem 1rem
+  padding: 0 0 1rem
   position: relative
   z-index: 1
   border-bottom: 1px solid $color-neutral
@@ -86,7 +87,9 @@
       font-weight: 700
       margin-right: .25rem
   &-entry
+    overflow: hidden
     padding: 0 .5rem
+    text-overflow: ellipsis
 
 .workoutDetails-footer
   @extend %helper-accelerate

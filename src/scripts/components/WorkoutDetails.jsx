@@ -158,12 +158,13 @@ module.exports = React.createClass({
         </button>
 
         <div className='workoutDetails'>
-          <WorkoutDetailsHeader
-            workout={this.props.workout}
-            />
 
           <div className='workoutDetails-body'>
             <div className='workoutDetails-scrollable' onWheel={this.handleWheel} ref='scrollable'>
+
+              <WorkoutDetailsHeader
+                workout={this.props.workout}
+                />
 
               <Comments
                 user={this.props.user}

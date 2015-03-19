@@ -16,11 +16,8 @@ var Scroll = React.createClass({
 
     var deltaY = event.pageY - this.mouseMoveInitialPageY;
     var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().offsetHeight;
-    // deltaY - amount of mouse drag from the drag start
-    // mouseMoveInitialOffset - distance from top of the scroll to the drag start
-    // so mouseMoveInitialOffset + deltaY should define the new scrollTop
-    // the scale is this.scrollableScrollHeight / this.refs.scroll.getDOMNode.offsetHeight
-    this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY)));
+
+    this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY - this.deltaThumb)));
   },
   handleTouchStart: function(event) {
     if (event.target === this.refs.scroll.getDOMNode()) {
@@ -28,10 +25,15 @@ var Scroll = React.createClass({
       this.mouseMoveInitialPageY = event.pageY;
       this.mouseMoveInitialOffset = event.pageY - this.refs.scroll.getDOMNode().getBoundingClientRect().top;
 
+      // add delta between scrollThumb and scroll
+
+      this.deltaThumb =
+      event.pageY - this.refs.scrollThumb.getDOMNode().getBoundingClientRect().top;
+
       // send initial value to mouse position stream
       var deltaY = event.pageY - this.mouseMoveInitialPageY;
       var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().offsetHeight;
-      this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY)));
+      this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY - this.deltaThumb)));
     }
   },
   handleTouchMove: function(event) {
@@ -60,7 +62,12 @@ var Scroll = React.createClass({
     // send initial value to mouse position stream
     var deltaY = event.pageY - this.mouseMoveInitialPageY;
     var scale = this.scrollableScrollHeight / this.refs.scroll.getDOMNode().offsetHeight;
-    this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY)));
+
+    // add delta between scrollThumb and scroll
+
+    this.deltaThumb =
+    event.pageY - this.refs.scrollThumb.getDOMNode().getBoundingClientRect().top;
+    this.props.mousePositionStream.push(Math.floor(scale*(this.mouseMoveInitialOffset + deltaY - this.deltaThumb)));
 
     // attach event listeners
     document.addEventListener('mousemove', this.handleThumbDrag);
@@ -157,6 +164,7 @@ var Scroll = React.createClass({
     return (
       <div ref='scroll' className='scroll'>
         <div
+          ref='scrollThumb'
           style = {style}
           className={classes} />
       </div>

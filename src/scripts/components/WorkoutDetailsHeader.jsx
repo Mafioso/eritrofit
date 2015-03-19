@@ -24,25 +24,25 @@ var WorkoutDetailsHeader = React.createClass({
     }
 
     var text = this.props.workout.text;
-    var split = text.split(/(\r\n|\n|\r)/gm);
-    var removedLines = false;
-
-    if (Math.ceil(split.length / 2) > 3) {
-      removedLines = true;
-      text = '';
-      for (var i = 0; i < 5; i++) {
-        text += split[i];
-      }
-    }
-
-    text = _.trunc(text, {
-      'length': 140,
-      'separator': /,? +/,
-    });
-
-    if (removedLines && !_.endsWith(text, '...')) {
-      text += '...';
-    }
+    // var split = text.split(/(\r\n|\n|\r)/gm);
+    // var removedLines = false;
+    //
+    // if (Math.ceil(split.length / 2) > 3) {
+    //   removedLines = true;
+    //   text = '';
+    //   for (var i = 0; i < 5; i++) {
+    //     text += split[i];
+    //   }
+    // }
+    //
+    // text = _.trunc(text, {
+    //   'length': 140,
+    //   'separator': /,? +/,
+    // });
+    //
+    // if (removedLines && !_.endsWith(text, '...')) {
+    //   text += '...';
+    // }
     return (
       <div className='workoutDetails-header'>
         <div className='workout-userpic figure-userpic'>

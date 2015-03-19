@@ -30,7 +30,7 @@ var Comments = React.createClass({
       };
       for (var i = 1; i < commentBlobs.length; i++) {
 
-        if (commentBlobs[i-1].author === commentBlobs[i].author && commentBlobs[i].type === 'COMMENT') {
+        if (commentBlobs[i-1].author === commentBlobs[i].author && commentBlobs[i].type === 'COMMENT' && commentBlobs[i-1].type === 'COMMENT') {
           var prev = commentBlobs[i-1].timestamp;
           var next = commentBlobs[i].timestamp;
           if (moment.duration(moment(next).diff(moment(prev))).asMinutes() <= 1) {
