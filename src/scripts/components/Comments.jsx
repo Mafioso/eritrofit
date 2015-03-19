@@ -21,6 +21,7 @@ var Comments = React.createClass({
 
       var j = 0;
       commentsData[0] = {
+        type: commentBlobs[0].type,
         author: commentBlobs[0].author,
         key: commentBlobs[0].key,
         timestamp: commentBlobs[0].timestamp,
@@ -28,7 +29,8 @@ var Comments = React.createClass({
         text: [{key: commentBlobs[0].key, timestamp: commentBlobs[0].timestamp, text: commentBlobs[0].text}]
       };
       for (var i = 1; i < commentBlobs.length; i++) {
-        if (commentBlobs[i-1].author === commentBlobs[i].author) {
+
+        if (commentBlobs[i-1].author === commentBlobs[i].author && commentBlobs[i].type === 'COMMENT') {
           var prev = commentBlobs[i-1].timestamp;
           var next = commentBlobs[i].timestamp;
           if (moment.duration(moment(next).diff(moment(prev))).asMinutes() <= 1) {
@@ -39,6 +41,7 @@ var Comments = React.createClass({
             } else {
               // create new
               commentsData[j] = {
+                type: commentBlobs[i].type,
                 author: commentBlobs[i-1].author,
                 key: commentBlobs[i-1].key,
                 timestamp: commentBlobs[i-1].timestamp,
@@ -50,6 +53,7 @@ var Comments = React.createClass({
           } else {
             j++;
             commentsData[j] = {
+              type: commentBlobs[i].type,
               author: commentBlobs[i].author,
               key: commentBlobs[i].key,
               timestamp: commentBlobs[i].timestamp,
@@ -60,6 +64,7 @@ var Comments = React.createClass({
         } else {
           j++;
           commentsData[j] = {
+            type: commentBlobs[i].type,
             author: commentBlobs[i].author,
             key: commentBlobs[i].key,
             timestamp: commentBlobs[i].timestamp,

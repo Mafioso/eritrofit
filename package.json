@@ -39,7 +39,7 @@
     "moment": "^2.8.4",
     "orchestrator": "^0.3.7",
     "pnglib": "0.0.1",
-    "react": "^0.12.1",
+    "react": "^0.13.1",
     "reactify": "^0.15.2",
     "replace-ext": "0.0.1",
     "route-pattern": "0.0.6",

@@ -9,17 +9,8 @@ var moment = require('moment');
 var fastclick = require('fastclick');
 
 require('moment/locale/ru');
-// moment.locale('ru');
-// moment.locale('en', {
-//   calendar: {
-//     sameDay: '[today]'
-//   }
-// });
-moment.locale('ru', {
-  calendar: {
-    sameDay: '[сегодня]'
-  }
-});
+
+moment.locale('ru');
 // var page = require('page');
 
 var views = require('./constants/views');
