@@ -55575,7 +55575,7 @@ module.exports = flux.createStore({
 
 var Bacon = require('baconjs');
 var Firebase = require('firebase');
-var firebaseUrl = 'https://endurance-almaty.firebaseio.com';
+var firebaseUrl = 'https://eritrofit.firebaseio.com';
 var ref = new Firebase(firebaseUrl);
 var _ = require('lodash');
 var JsSHA = require('jssha');
