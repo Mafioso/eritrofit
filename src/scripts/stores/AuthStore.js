@@ -1,47 +1,31 @@
 'use strict';
 
-var flux = require('fluxstream');
-var AuthActions = require('../actions/AuthActions');
-var RouterActions = require('../actions/RouterActions');
-var api = require('../utils/api');
-var routes = require('../constants/routes');
-var typeCheck = require('type-check').typeCheck;
+var authActionstreams = require('../streams/authStreams').actionstreams;
+var authDatastreams = require('../streams/authStreams').datastreams;
+var Store = require('./Store');
 
 
-module.exports = flux.createStore({
-  init: function() {
-    AuthActions.submitSignIn.listen(function(payload) {
-      var router_data = payload.router_data;
-      var fetchToken = api.tryAuth(payload.email, payload.password);
+var authStore = new Store(function() {
 
-      fetchToken.onValue(function(payload) {
-        if (typeCheck('Error',payload)) {
-          AuthActions.signInError(payload);
-        } else {
-          if (!router_data.target_url) { router_data.target_url = routes.INDEX; }
-          AuthActions.signInSuccess(router_data);
-        }
-      });
+  authActionstreams.logIn.onValue(function(payload) {
+    Parse.User.logIn(payload.username, payload.password).then(function(user) {
+      authDatastreams.result.emit(user);
+    }, function(error) {
+      authDatastreams.result.error(error);
     });
-    AuthActions.logout.listen(function() {
-      api.logout();
-      RouterActions.redirectPrompt({
-        target_url: '/login',
-        current_url: '/logout',
-        current_view: ''
-      });
-    });
-    AuthActions.signInSuccess.listen(function(payload) {
-      RouterActions.redirectPrompt(payload);
-    });
+  });
 
-  },
-  config: {
-    errors: {
-      action: AuthActions.signInError
-    },
-    userStream: {
-      action: AuthActions.userStream
-    }
-  }
+  authActionstreams.resetPassword.onValue(function(payload) {
+    Parse.User.requestPasswordReset(payload.email).then(function(success) {
+      authDatastreams.result.emit(success);
+    }, function(error) {
+      authDatastreams.result.error(error);
+    });
+  });
+
+  authActionstreams.logOut.onValue(function() {
+    Parse.User.logOut();
+  });
 });
+
+module.exports = authStore;

@@ -3,52 +3,78 @@
 var Icon = require('../components/Icon.jsx');
 var authActionstreams = require('../streams/authStreams').actionstreams;
 var authDatastreams = require('../streams/authStreams').datastreams;
-var routerActionstreams = require('../streams/routerStreams').actionstreams;
 require('../stores/authStore');
 
 var Login = React.createClass({
   getInitialState: function() {
     return({
-      error: '',
+      error: { code: '' },
       loading: false
     });
   },
-  onAuthResultValue: function() {
-    this.setState({ loading: false });
-    routerActionstreams.redirect.emit({
-      targetUrl: this.props.params.nextUrl || '/',
-      currentUrl: this.props.params.currentUrl,
-      currentView: 'LOGIN'
-    });
-  },
-  onAuthResultError: function(payload) {
-    this.setState({ error: payload.code, loading: false });
-  },
   componentDidMount: function() {
-    authDatastreams.result.onValue(this.onAuthResultValue);
-    authDatastreams.result.onError(this.onAuthResultError);
+    var self = this;
+
+    authDatastreams.result.onValue(function(payload) {
+      console.log(payload);
+    });
+
+    // AuthStore.streams.errors.listen(function(payload) {
+    //   if (payload) {
+    //     self.setState({ error: payload, waiting: false });
+    //   }
+    // });
   },
-  componentWillUnmount: function() {
-    authDatastreams.result.offValue(this.onAuthResultValue);
-    authDatastreams.result.offError(this.onAuthResultError);
+  componentDidUpdate: function() {
+    // keep focus in email field
+    if (this.state.error) {
+      switch(this.state.error.code) {
+        case 'EMPTY_EMAIL':
+          this.refs.loginEmail.getDOMNode().focus();
+          break;
+        case 'EMPTY_PASSWORD':
+          this.refs.loginPassword.getDOMNode().focus();
+          break;
+        case 'INVALID_USER':
+          this.refs.loginEmail.getDOMNode().select();
+          break;
+        case 'INVALID_PASSWORD':
+          this.refs.loginPassword.getDOMNode().select();
+          break;
+        default:
+          break;
+      }
+    } else {
+      this.refs.loginEmail.getDOMNode().focus();
+    }
   },
   handleSubmit: function(event) {
     event.preventDefault();
 
-    this.setState({ loading: true });
+    this.setState({ waiting: true });
 
-    authActionstreams.logIn.emit({
+    authActionstreams.logIn.push({
       username: this.refs.loginEmail.getDOMNode().value,
-      password: this.refs.loginPassword.getDOMNode().value
+      password: this.refs.loginPassword.getDOMNode().value,
+      route: {
+        targetURL: this.props.params.nextUrl || '/',
+        currentURL: this.props.params.currentURL,
+        currentView: 'LOGIN'
+      }
     });
 
   },
   render: function() {
     var error;
 
-    switch(this.state.error) {
-      case 101:
-        error = (<div className='login-line login-line--error'>Проверьте введенные данные!</div>);
+    switch(this.state.error.code) {
+      case 'EMPTY_PASSWORD':
+      case 'INVALID_PASSWORD':
+        error = (<div className='login-line login-line--error'>Неправильный пароль</div>);
+        break;
+      case 'EMPTY_EMAIL':
+      case 'INVALID_USER':
+        error = (<div className='login-line login-line--error'>Такого пользователя не существует</div>);
         break;
       default:
         break;

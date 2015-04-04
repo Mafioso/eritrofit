@@ -1,116 +1,116 @@
 'use strict';
 
-var flux = require('fluxstream');
-var RouterActions = require('../actions/RouterActions');
-var AuthActions = require('../actions/AuthActions');
-var api = require('../utils/api');
-var views = require('../constants/views');
-var routes = require('../constants/routes');
+var routerActionstreams = require('../streams/routerStreams').actionstreams;
+var routerDatastreams = require('../streams/routerStreams').datastreams;
+var authActionstreams = require('../streams/authStreams').actionstreams;
+require('./authStore');
+
+var Store = require('./Store');
 var RoutePattern = require('route-pattern');
 var _ = require('lodash');
 var moment = require('moment');
-// var typeCheck = require('type-check').typeCheck;
 
+var routerStore = new Store(function() {
+  var routes = {
+    INDEX: '/',
+    LOGIN: '/login',
+    LOGOUT: '/logout',
+    RESET_PASSWORD: '/login/reset-password',
+    DAY: '/day/:day',
+    NOT_FOUND: '/404'
+  };
+  var views = {
+    INDEX: 'INDEX',
+    LOGIN: 'LOGIN',
+    LOGOUT: 'LOGOUT',
+    RESET_PASSWORD: 'RESET_PASSWORD',
+    DAY: 'DAY',
+    NOT_FOUND: 'NOT_FOUND'
+  };
 
-module.exports = flux.createStore({
-  init: function() {
-    var matchers = [];
-    for (var view in routes) {
-      var pattern = RoutePattern.fromString(routes[view]);
-      matchers.push({
-        pattern: pattern,
-        view: view
-      });
-    }
+  var matchers = [];
 
-    // listen to popstate
-    RouterActions.popstate.listen(function(payload) {
-      var newState = payload;
-      // payload should contain:
-      // 1. target_url - transition to this url
-      // 2. current_url - transition from this url
-      // 3. current_view - transition from this view
-
-      if (newState.target_url === routes.LOGOUT) {
-        // do absolutely nothing and wait for redirect
-        AuthActions.logout();
-        return;
-      }
-
-      // CHECK IF VIEW EXISTS
-      // after check newState should contain
-      // 1. target_view - transition to this view
-      // 2. params - props for target_view
-      for (var i in matchers) {
-        if (matchers[i].pattern.matches(payload.target_url)) {
-          var params = matchers[i].pattern.match(payload.target_url);
-          newState.target_view = matchers[i].view;
-          newState.params = params.pathParams;
-        }
-      }
-
-      // VIEW DOESN'T EXIST,
-      // redirect to 404
-      if (!newState.target_view) {
-        newState.update_url = true;
-        newState.target_view = views.NOT_FOUND;
-        newState.target_url = routes.NOT_FOUND;
-
-        RouterActions.setView(newState);
-        return;
-      }
-
-      // USER AUTHORIZED?
-      if (api.getAuth()) {
-        var userStream = api.getUserById(api.getCurrentUserId());
-        userStream.onValue(function(payload) {
-          AuthActions.userStream(payload);
-        });
-
-        // HAVE RIGHTS FOR THIS PAGE?
-        // 1. special case for login and password reset:
-        //      - if popstate.next doesn't exist, set view to INDEX and target_url to routes.INDEX
-        // 2. show 403 if doesn't have rights
-        // 3. props or view update both change router's state, so rerender will be initiated,
-        //    no need to split them into different channels
-
-        if (_.indexOf([views.LOGIN, views.PASSWORD_RESET, views.INDEX], newState.target_view) > - 1) {
-          // redirect!
-          var today = moment().format('DDMMYY');
-          newState.update_url = true;
-          newState.target_view = views.DAY;
-          newState.target_url = '/day/'+today;
-          newState.params = { day: today };
-        }
-
-        // TODO: check for rights!
-        // ...
-
-      } else {
-        AuthActions.userStream(null); // be sure to empty the user state
-
-        // prompt login for pages, that are not LOGIN or PASSWORD_RESET
-        if (_.indexOf([views.LOGIN, views.PASSWORD_RESET], newState.target_view) === -1) {
-          newState.update_url = true;
-          newState.target_view = views.LOGIN;
-          newState.params.next_url = newState.target_url;
-          newState.target_url = routes.LOGIN;
-        }
-      }
-
-      RouterActions.setView(newState);
-      return;
-
+  for (var view in routes) {
+    var pattern = RoutePattern.fromString(routes[view]);
+    matchers.push({
+      pattern: pattern,
+      view: view
     });
-
-    RouterActions.redirectPrompt.listen(function(payload) {
-      RouterActions.popstate(_.assign(payload, {update_url: true}));
-    });
-
-  },
-  config: {
-    setView: {
-      action: RouterActions.setView
-    }
   }
+
+  routerActionstreams.popstate.onValue(function(payload) {
+    var nextView = payload;
+    // payload should contain:
+    // 1. targetUrl - transition to this url
+    // 2. currentUrl - transition from this url
+    // 3. currentView - transition from this view
+
+    if (nextView.targetUrl === routes.LOGOUT) {
+      authActionstreams.logOut.emit(null);
+    }
+
+    // CHECK IF VIEW EXISTS
+    // after check newState should contain
+    // 1. targetView - transition to this view
+    // 2. params - props for targetView
+    for (var i in matchers) {
+      if (matchers[i].pattern.matches(payload.targetUrl)) {
+        var params = matchers[i].pattern.match(payload.targetUrl);
+        nextView.targetView = matchers[i].view;
+        nextView.params = params.pathParams;
+      }
+    }
+
+    // VIEW DOESN'T EXIST,
+    // redirect to 404
+    if (!nextView.targetView) {
+      nextView.updateUrl = true;
+      nextView.targetView = views.NOT_FOUND;
+      nextView.targetUrl = routes.NOT_FOUND;
+
+      routerDatastreams.route.emit(nextView);
+    }
+
+    // USER LOGGED IN?
+    if (Parse.User.current()) {
+      // HAVE RIGHTS FOR THIS PAGE?
+      // 1. special case for login and password reset:
+      //      - if popstate.next doesn't exist, set view to INDEX and target_url to routes.INDEX
+      // 2. show 403 if doesn't have rights
+      // 3. props or view update both change router's state, so rerender will be initiated,
+      //    no need to split them into different channels
+
+      if (_.indexOf([views.LOGIN, views.RESET_PASSWORD, views.INDEX], nextView.targetView) > - 1) {
+        // redirect!
+        var today = moment.utc().format('DDMMYY');
+        nextView.updateUrl = true;
+        nextView.targetView = views.DAY;
+        nextView.targetUrl = '/day/'+today;
+        nextView.params = { day: today };
+      }
+
+
+      _.assign(nextView.params, { currentUser: Parse.User.current().attributes });
+
+    } else {
+      // prompt login for pages, that are not LOGIN or RESET_PASSWORD
+      if (_.indexOf([views.LOGIN, views.RESET_PASSWORD], nextView.targetView) === -1) {
+        nextView.updateUrl = true;
+        nextView.targetView = views.LOGIN;
+        if (nextView.targetUrl !== routes.LOGOUT) {
+          nextView.params.nextUrl = nextView.targetUrl;
+        }
+        nextView.targetUrl = routes.LOGIN;
+      }
+    }
+
+    routerDatastreams.route.emit(nextView);
+  });
+
+  routerActionstreams.redirect.onValue(function(payload) {
+    routerActionstreams.popstate.emit(_.assign(payload, { updateUrl: true }));
+  });
+
 });
+
+module.exports = routerStore;

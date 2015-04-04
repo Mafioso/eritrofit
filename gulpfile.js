@@ -35,8 +35,9 @@ gulp.task('styles', function() {
 
 gulp.task('browserify', function() {
   return gulp.src('src/scripts/app.jsx')
+    .pipe($.plumber({errorHandler: $.notify.onError("Browserify Error: <%= error.message %>")}))
     .pipe($.browserify({
-      noparse: ['react/addons', 'fluxstream', 'baconjs'],
+      noparse: ['react/addons', 'kefir', 'lodash'],
       transform: 'reactify',
       extensions: ['.jsx']
     }))
